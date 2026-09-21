@@ -1,6 +1,6 @@
 # 05 データモデル
 
-> 設計契約v1。以下は新規実装のための契約であり、ファイル・CLI・schema validatorは未実装。根拠は [参照レビュー](./reference-implementation-review.md)。
+> 設計契約v1。設定schemaとfoundation runの保存・検証を実装済み。検索・GT・モデル等のレコードvalidatorと各工程CLIは未実装。根拠は [参照レビュー](./reference-implementation-review.md)。
 
 ## 保存方式と識別
 
@@ -106,8 +106,14 @@ TREC qrelsは `query_id 0 product_id relevance`、runは `query_id Q0 product_id
 
 初期値はFA部品・JA/EN・10,000 SKU・1,000 QueryFamily、family分割はtrain/tuning/holdout/production = 60/15/15/10%。Qdrantはlocalhost:6333。これらはローカルPoCの初期選択で、実験開始時にsnapshotへ固定する。カテゴリ属性規約・Embedding model/revision・Feature schemaは未確定。
 
-設定loaderは未実装。実装時にはproject/configのprojectName一致、未知キー拒否、工程ごとの必須null検査、secret参照の解決を行う。secret全体をconfigへmergeせず、認証情報は接続adapterにだけ渡す。秘密情報を除いた有効設定をmanifestへ保存する。環境変数overrideは現在未提供。
+設定loaderは実装済み。project/configのprojectName一致、未知キー拒否、工程ごとの必須null検査、secret参照キーの検証を行う。接続adapterは未実装で、実値の使用・環境変数からの注入は後続対応とする。secret全体をconfigへmergeせず、認証情報は接続adapterにだけ渡す。秘密情報を除いた有効設定をmanifestへ保存する。環境変数overrideは現在未提供。
 
 `split.seed`はfamilyの割当、`generationSeeds`は分割後の生成用。翻訳・派生を作る前にfamilyを分割し、seedの違いだけで独立性を保証しない。言語ごとの行数はfamily数と異なる。
 
 qualityGateのnullは採用判定不可、simulation.enabled=falseはsimulation未実施を意味する。合格や指標0へ置き換えない。release.requireAcceptedDecisionは候補昇格に適用し、初回Baselineのbootstrapは08の別手順に従う。
+
+## Foundation runの実装範囲
+
+bootstrapのmanifestはschema_version、run_id、created_at、status、outputs（ファイル名→sha256）、metadataを持つ。metadataにはfoundation種別・code revision・dirty状態・ソース/lock checksum・Python/依存versionを記録する。出力は公開config.jsonとreadiness.json。secretは自動読込しない。
+
+同一run_idのwriter予約と一時ディレクトリからのrenameで公開し、既存runは置換しない。通常例外は一時出力を片付ける。強制終了後に残った隠しlock/stagingは自動削除せず、writerが終了したことを確認して個別復旧する。検証は出力inventoryとchecksumを照合するもので、署名・改ざん防止機構ではない。未コミットコードのpatch保存・完全な再実行復元・モデルbundleは後続対応。

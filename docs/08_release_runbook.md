@@ -4,7 +4,7 @@
 
 ## リリース前
 
-1. [07](./07_test_strategy.md)の実テストと品質ゲートが完了し、decision=acceptedであることを確認する。makeのTODO出力を合格証跡にしない。
+1. [07](./07_test_strategy.md)の実テストと品質ゲートが完了し、decision=acceptedであることを確認する。foundationテストの成功だけをモデル品質の合格証跡にしない。
 2. baseline/candidateの入力・GT・MetricPolicy・split・結果・採否をmanifestで確認する。
 3. 新ReleaseBundleへ検索構成、catalog/index参照、embedding revision、model、FeatureSchema、policy参照とchecksumを固定する。
 4. 直前activeのmanifest・必要ファイル・indexが残っていて、現runtimeで読み込み可能なことを確認する。

@@ -1,17 +1,26 @@
 # 04 ワークフロー
 
-> 設計契約v1。プロダクト実装・実行CLIは未提供。以下の処理名は手順上の名前であり、実行可能なコマンドではない。
+> 設定検証・foundation bootstrap・成果物検証は実装済み。検索・学習・評価・release CLIは未実装。後半の工程名は設計手順であり実コマンドではない。
 
-## 現在実行できる確認
+## 実行できるコマンド
+
+リポジトリ直下、Python 3.11以上とuvを使用する。
 
 ```bash
-git status --short
-make test
-make fmt
-git diff --check
+make setup
+make config-check
+make run
+make fmt lint test build
 ```
 
-現行の`make test` / `make fmt`はTODOを表示するだけで、成功終了はテスト・整形の実施を意味しない。`make setup` / `make run` / `make dev`もテンプレート。`make help` targetは存在しない。アプリのセットアップ手順は依存・CLI実装時にここへ追加する。
+`setup`はlockから.venvへ依存を導入する。`run` / `dev`はfoundation bootstrapを実行し、`artifacts/runs/<run_id>/`へconfig.json・readiness.json・manifest.jsonを保存する。ML処理は実行しない。
+
+```bash
+uv run --locked parts-search verify-artifact artifacts/runs/<run_id>
+uv run --locked parts-search config-check --stage retrieval
+```
+
+後者は現状の未設定を報告して終了1となる。工程検査は設定の充足のみを確認する。`foundation`（既定）以外はcatalog / retrieval / training / evaluation / gate / simulationを指定できる。通常CLIはsecretを読まない。`--project` / `--config`はサブコマンドより前に指定する。`make help`で一覧を確認できる。
 
 ## 作業開始と終了
 

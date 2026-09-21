@@ -6,14 +6,14 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 
 ## プロジェクト概要
 
-- 目的: TODO（何を作るか）
-- 主要技術: TODO
+- 目的: 多言語部品検索の継続改善ループを再現するPoC
+- 主要技術: Python 3.11+ / uv / PyYAML / jsonschema。検索・学習本体は後続実装。
 
 ## セットアップ / 主要コマンド
 
 ```bash
-make setup    # 依存取得 + ビルド
-make dev      # 開発サーバー
+make setup    # lockから.venvへ依存導入
+make dev      # foundation bootstrap（検索・学習は未実行）
 make test     # テスト
 make fmt      # フォーマット
 ```

@@ -1,16 +1,15 @@
 # 07 テスト戦略
 
-> 設計契約v1。以下は実装時に満たす検証仕様。現時点でプロダクトのテストは存在せず、make成功を品質証明にしない。
+> 設定・成果物保存・CLIのfoundationテストを実装済み。以下の検索・学習・品質テスト契約は未実装。
 
 ## 現在の品質ゲート
 
 ```bash
-make test
-make fmt
+make fmt lint test build
 git diff --check
 ```
 
-前二者はTODO表示のみ。文書編集では、内部リンク、参照ファイル、定義の整合、未実装状態の明示を確認する。依存導入時に実テストをMakefileへ接続する。
+unittestはYAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行を検証する。Ruffで整形とlint、uv buildで配布物を検証する。実Qdrant・学習・指標・ReleaseBundleのテストを通したという意味ではない。
 
 ## 実装時のテスト契約
 

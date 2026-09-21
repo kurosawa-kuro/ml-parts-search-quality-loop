@@ -1,39 +1,33 @@
-.PHONY: setup build run dev test fmt lint clean
+.DEFAULT_GOAL := help
+.PHONY: help setup deps build run dev config-check test fmt lint
 
-# Application
-APP_NAME := <your-project>
+help:
+	@echo 'setup        Install locked Python dependencies into .venv'
+	@echo 'config-check Validate public configuration (foundation only)'
+	@echo 'run / dev    Write a foundation run; no retrieval or training'
+	@echo 'test         Run unit and CLI integration tests'
+	@echo 'fmt / lint   Format / check Python code'
+	@echo 'build        Build wheel and source distribution'
 
-# 初期セットアップ (依存取得・ビルド)
-setup: deps build
-	@echo "Setup complete."
+setup deps:
+	uv sync --locked
 
-deps:
-	@echo "TODO: 依存をインストール (例: npm install / cargo fetch / pip install -r requirements.txt)"
+config-check:
+	uv run --locked parts-search config-check
 
-# ビルド
-build:
-	@echo "TODO: ビルドコマンドを記述"
+run dev:
+	uv run --locked parts-search bootstrap
 
-# 実行
-run:
-	@echo "TODO: 実行コマンドを記述"
-
-# 開発 (ホットリロード)
-dev:
-	@echo "TODO: 開発サーバー / watch コマンドを記述"
-
-# テスト
 test:
-	@echo "TODO: テストコマンドを記述"
+	uv run --locked python -m unittest discover -s tests -v
 
-# 整形
 fmt:
-	@echo "TODO: フォーマッタを記述"
+	uv run --locked ruff check --select I --fix src tests
+	uv run --locked ruff format src tests
 
-# 静的解析
 lint:
-	@echo "TODO: リンタを記述"
+	uv run --locked ruff check src tests
+	uv run --locked ruff format --check src tests
 
-# クリーンアップ
-clean:
-	@echo "TODO: 成果物削除コマンドを記述"
+build:
+	uv build

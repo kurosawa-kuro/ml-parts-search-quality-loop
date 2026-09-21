@@ -6,13 +6,14 @@
 
 ## Context
 
-プロダクト実装は未着手。Makefileのtest / fmtはTODO出力のみ。先に [未決事項](./20260921-search-quality-poc-decisions.md) の該当契約を確定する。
+設定検証・foundation CLI・ローカルrun保存とMakefileの実テスト/整形/buildを実装済み。検索・GT・学習・評価は未実装。先に [未決事項](./20260921-search-quality-poc-decisions.md) の該当契約を確定する。
 
 ## Scope / Plan
 
 以下を実装単位ごとのtaskへ分割して進める。
 
-- [ ] 05のJSON/JSONL・manifest・schema validatorと07の手書きfixture。
+- [x] 設定schema、foundation runのJSON/JSONL・manifest保存と改変検証。
+- [ ] 検索・GT・Feature・modelのレコードvalidatorと07の指標手書きfixture。
 - [ ] 商品マスタ・クエリ・GT生成、独立したデータ分割。
 - [ ] Vector-only検索とSearchRun記録。
 - [ ] 全体指標・Slice・FailureCaseの生成。
@@ -21,7 +22,8 @@
 - [ ] 疑似オンラインイベントとKPI、失敗抽出からGT更新への接続。
 - [ ] Holdout / Production-like比較、採否と次の実験の記録。
 - [ ] 不完全評価の停止、再試行・event隔離、bundle切替・rollback。
-- [ ] 実行CLIとMakefileの接続、07の実テスト、08のsmokeコマンドを実装。
+- [x] foundation CLIとMakefile、設定・成果物の実テストを接続。
+- [ ] ML工程CLI、07の品質テスト、08のsmokeコマンドを実装。
 - [ ] 01〜08の設計契約v1に対する実装確認と差分反映。
 
 ## Acceptance Criteria

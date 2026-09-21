@@ -103,3 +103,5 @@
 - [参照実装に基づく01〜08の設計改善](05_done/20260921-reference-design-review.md)
 
 - [ローカルPoC設定の整備](05_done/20260921-configure-local-poc.md)
+
+- [Pythonの土台作成](05_done/20260921-python-foundation.md)

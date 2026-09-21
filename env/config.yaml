@@ -1,5 +1,5 @@
 # PoC初期設定。パスは env/project.yaml の repoRoot を基準に解決する。
-# 設定loader・CLIは未実装。nullの必須項目は該当工程の開始前に確定する。
+# make config-check で検証可能。nullの必須項目は該当工程の開始前に確定する。
 # 秘密値はここに書かず env/secret.yaml または secret manager から取得する。
 schemaVersion: 1
 projectName: parts-search-quality-loop

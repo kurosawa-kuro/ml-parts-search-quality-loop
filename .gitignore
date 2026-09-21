@@ -85,3 +85,6 @@ uploads/
 
 # Local checkouts of upstream reference repositories
 /references/github/
+
+# Python package metadata
+*.egg-info/
