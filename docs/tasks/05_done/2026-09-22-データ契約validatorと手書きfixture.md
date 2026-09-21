@@ -17,7 +17,7 @@ integrity / dev speed
 
 ## Context
 
-設定schemaとfoundation成果物検証は実装済みだが、ProductからPromotionDecisionまでの検索・学習レコードvalidatorは未実装。合成生成器と同じロジックでテストすると誤りを自己検証するため、手書きfixtureを独立して用意する。
+着手時はレコードvalidatorが未実装だった。現在は14レコード契約・validator・読込API・contracts工程を実装済み。合成生成器と同じロジックでテストすると誤りを自己検証するため、手書きfixtureを独立して用意する。
 
 ## Scope
 
@@ -78,19 +78,29 @@ uv run --locked parts-search verify-artifact artifacts/reports/<run_id>   # veri
 
 受入条件の充足:
 
-- 正常 fixture が全 validator を違反ゼロで通る。契約違反 fixture が**期待した理由で**落ちる。
+- 作成済みの正常fixture 5種類が対応validatorを通り、異常fixtureが期待した理由で落ちる。全14種類の正常fixtureを確認したという意味ではない。
 - 正常 0 件 / failed / not_run / unrateable / no_relevant を別に表現できることをテストで固定。
   `relevance: 0`（不適合と判定）と `null`（未判定）の混同は落ちる。
 - 指標 fixture の期待値を `tests/fixtures/metrics_expected.json` に固定（DCG@10=6.5、
   IDCG@10=8.8927892607、NDCG@10=0.7309292742、RR の 1.0 / 0.5、0 件 / 失敗 / no_relevant の区別）。
 - `make fmt lint test build` が成功する。
 
-## 残り（このタスクの外）
+## 完了範囲と後続への引継ぎ（2026-09-22整理）
 
-- `Candidate` / `SplitManifest` / `FeatureSchema` / `ModelBundle` / `Experiment` / `Evaluation` /
-  `FailureCase` の**手書き fixture は未作成**。契約と validator は実装済みで、
-  fixture は各レコードを実際に生成する工程（T2・T3・T5・T6）で足すのが自然。
-- 指標の**計算実装**は T4。ここでは期待値の fixture を固定しただけ。
+基盤実装と作成済みfixtureの検証を完了扱いとし、各工程の正常fixture拡充は以下へ引き継ぐ。
+全14レコードの正常fixture網羅は未完了であり、完了済みに読み替えない。
+
+| 正常fixture / 残作業 | 引継ぎ先 |
+|---|---|
+| SplitManifest | T2で`tests/fixtures/valid/splits.json`と独立テストを追加済み |
+| Candidate | [T3](../02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md) |
+| Evaluation・FailureCase、指標計算と既存期待値の照合 | [T4](../02_backlog/2026-09-22-評価SliceとFailureCase.md) |
+| FeatureRow・FeatureSchema・ModelBundle | [T5](../02_backlog/2026-09-22-構造化FeatureとLambdaRank.md) |
+| Experiment・PromotionDecision | [T6](../02_backlog/2026-09-22-Experiment比較と品質Gate.md) |
+
+FeatureRowとPromotionDecisionは異常例の検査があるが、正常fixtureは未作成。
+各引継ぎ先の受入条件にも明記した。元の全レコード正常fixture条件をこのタスクだけで
+満たしたとはせず、完了した基盤と未完了の検証拡充を分離して管理する。
 
 ## 引き継ぎ時の再検証（2026-09-22、Codex）
 
@@ -107,5 +117,4 @@ uv run --locked parts-search verify-artifact artifacts/reports/<run_id>   # veri
 - 確認用成果物: `artifacts/reports/20260921T162239Z-a4100dadfa90`。
   ID の日付は UTC、作業日は Asia/Tokyo。
 
-次工程は [T2](../02_backlog/2026-09-22-合成カタログQueryGTとfamily分割.md)。
-上記「残り」の fixture 不足は引き続き未対応であり、本再検証によって充足したとは扱わない。
+その後、[T2](./2026-09-22-合成カタログQueryGTとfamily分割.md)を完了。T2後の通常検証は114 passed / 2 deselected、lint/build成功。現在の次工程はT3。上記82件・85件の記録は各時点の履歴として保持する。

@@ -4,19 +4,26 @@
 
 [参照実装レビュー](../../reference-implementation-review.md)後の未決事項を確定し、01〜08へ反映する。ID・保存形式・GT優先順位・分割・指標・event・採否状態は設計契約v1として具体化済み。以前の一覧をそのまま未決扱いしない。
 
-## 残る判断
+## 決定済みと残作業（2026-09-22整理）
 
-| 項目 | 決めること | 決定時期 |
+この台帳は後続工程の具体化・検証が残るためbacklogに保持する。以下の現状を優先し、
+後半の選定時点の実測記録・仮置き経緯は履歴として残す。
+設定値が埋まったこと、policyの内容を定義したこと、工程を実行検証したことを区別する。
+
+| 項目 | 完了・設定済み | 残作業 / 担当 |
 |---|---|---|
-| 商材 | 初期FA部品に設定済み。カテゴリ構成の具体化 | 生成器実装前 |
-| 初期規模・言語 | 10,000 SKU・JA/EN・1,000 family・split比率は設定済み。言語別query分布の具体化 | 生成器実装前 |
-| 商材別GT | 必須属性、正規単位、数値許容差、代替条件、自然文の制約抽出 | GT実装前 |
-| Retrieval | 初期Qdrantローカルに設定済み。**Embedding model/revisionは下記の実測を踏まえて決める**。filter / boostの追加方式 | 検索実装前 |
-| Hybrid | BM25 / Hybrid / RRFの採否とprefetch・fusion設定 | 拡張実装前 |
-| 品質ゲート | 最小NDCG改善量、guardrail許容回帰、最低Slice件数、反復seed数 | candidate比較前 |
-| SimulationPolicy | 観測窓、位置バイアス、click / conversion / reformulation確率、分布shift条件 | simulation実装前 |
-| 実行環境 | 依存version・lock、ir_measures provider、model数値許容差、CLI名・実コマンド | 各工程実装時 |
-| OSSの導入 | ライセンス・依存互換・コード流用の採否。静的な参照と導入は別 | 導入前 |
+| 商材・GT | T2で架空shaft/bearing/bolt、属性・単位・許容差・代替規約を05へ反映 | 実商品の適合規約、任意自然文解析は現PoC対象外 |
+| 規模・言語・split | 10,000 SKU・1,000 family・JA/EN各1,000 Query、60/15/15/10%分割、GT2,000万行を生成・全行読戻し済み | T3以降で固定入力として使用 |
+| Embedding | E5-smallのmodel/revision/前処理ID、sentence-transformersを選定・設定済み | 前処理とQdrant adapter、実検索・決定性検証 / T3 |
+| MetricPolicy | gain・cutoff・null規約・手計算期待値、ir_measures 0.4.3の導入・版設定 | providerによる計算実装と独立fixture照合 / T4 |
+| FeatureSchema | `parts_features_v1`とlabel_gain、LightGBM依存を設定済み | 列順・型・欠損・変換・checksum・モデル数値許容差 / T5 |
+| 品質Gate | 閾値・guardrail・Slice最低件数・反復seedは仮置き済み | 比較前の凍結、比較ロジック・採否検証 / T6 |
+| SimulationPolicy | policy ID・観測窓1800秒・方式・paired streamを設定済み | 位置バイアス関数・各確率・分布shiftの具体化、生成とKPI / T7 |
+| 実行環境 | Python/numpy/torch制約、依存lock、CLI入口 | 各工程の接続・数値再現性検証 / T3〜T8 |
+| Hybrid / OSS追加 | 現行vector-onlyの対象外 | 導入が必要になった時に採否・ライセンス・互換性を確認 |
+
+T3の着手をEmbeddingの再選定で止めない。T5/T7の詳細は既存の仮置き方針に沿って
+担当工程で具体化し、実装完了と混同しない。candidate結果を見て凍結済み閾値を変えない。
 
 ## Embedding 実行ライブラリの実測（2026-09-22）
 
@@ -76,13 +83,13 @@ numpy 1.26.4 + torch 2.2.2 -> OK
 
 dense embedding は**型番の完全一致に弱い**（`SHF-20` と `SHF-25` を近いと判定する）。`exact_model_number` が query type にあるため vector-only baseline はそこで弱く出るが、**それは T5（構造化 Feature + LambdaRank）が埋める改善余地**であり、baseline を強化するために BM25 / Hybrid を先に入れると改善ループの検証対象が消える。T3 の Non-scope はそう読める。
 
-## 全項目を仮置きで確定した（2026-09-22）
+## 設定項目を仮置きで確定した経緯（2026-09-22）
 
 **方針**: 実データで動かすまで最適値は分からない。よって**論理的に妥当な既定を置いて先に進め、実測後に調整する**。未確定を理由に工程を止めない。
 
 | 設定 | 仮置き値 | 根拠 |
 |---|---|---|
-| `catalog.attributePolicyId` | `fa_parts_attr_v1` | 合成データなので policy ID を先に切り、内容は T2 実装時に定義 |
+| `catalog.attributePolicyId` | `fa_parts_attr_v1` | 合成データなので policy ID を先に切り、内容は T2 で定義・検証済み（05参照） |
 | `features.schemaId` | `parts_features_v1` | 列順を含む checksum は T5 で確定 |
 | `evaluation.version` | `0.4.3` | **実測**した ir_measures の解決版 |
 | `evaluation.provider` | `ir_measures` | 05 の `implementation` と一致 |

@@ -54,10 +54,10 @@ integrity / collection accuracy
 - カテゴリ構成、必須属性、数値許容差、代替条件が未確定のとき。
 - 生成規則だけでは曖昧な自然文を一意に判定できないとき。
 
-## 引き継ぎ時の実装準備（2026-09-22）
+## 引き継ぎ時の実装準備（2026-09-22、着手前の履歴）
 
 - T1 の再検証と CLI 接続漏れ修正を実施。85 passed, 2 deselected、lint/build 成功。
-  T2 の生成器はまだ未実装。
+  この時点ではT2の生成器は未実装だった。現在の完了証跡は後述のVerificationを参照。
 - 商材 policy の内容は、[仮置き判断](../02_backlog/20260921-search-quality-poc-decisions.md)の
   「全項目を仮置きで確定した」に沿って T2 で具体化できる。古い owner 判断待ちの記述だけで停止しない。
 - `read_records` は集合全体を list にし、JSONL 読込は 256 MiB 上限。
@@ -125,3 +125,32 @@ Asia/Tokyoの作業日は日付が異なる。性能値はこのIntel Macでの�
 未検証・後続範囲: 実商品適合性、任意自然文の解析、検索・学習・指標・品質改善効果。
 商材policyは合成PoC向けの仮置きであり、実商品業務に転用する契約ではない。
 既存foundation同様、未コミットコードの自動patch保存は未実装。
+
+### 大規模読戻しの最終確認
+
+`records.io.iter_judgments`を最後まで消費し、各行のquery_id/product_idを
+保存済みQuery/Catalogのソート済み直積と照合した。**20,000,000行すべて一致**。
+行契約、batchを跨ぐ重複・順序、最終行数の検査も通過。
+読込側のstatus/relevance集計はsummary.jsonと完全一致した。
+最終コードで再生成した既定datasetの集合digestと、保存済みdatasetも一致した。
+
+- 読戻し所要時間: 414.86秒（checksum検証を含む）。
+- 読戻しプロセス最大RSS: 154,198,016 bytes（約147 MiB）。
+- 最終結果: T2の全受入条件を確認。次はT3 Vector Baseline検索とSearchRun。
+
+読戻しの要点（通常テストとは別に大規模成果物へ実行）:
+
+```python
+from pathlib import Path
+from parts_search.records.io import iter_judgments, read_records
+
+dataset = Path("artifacts/datasets/20260921T163519Z-00509a39e003")
+gt = Path("artifacts/judgments/20260921T163520Z-c82b50e6a3c3")
+products = sorted(p["product_id"] for p in read_records("Product", dataset / "catalog.jsonl"))
+queries = sorted(q["query_id"] for q in read_records("Query", dataset / "queries.jsonl"))
+count = 0
+for count, row in enumerate(iter_judgments(gt), start=1):
+    assert row["query_id"] == queries[(count - 1) // len(products)]
+    assert row["product_id"] == products[(count - 1) % len(products)]
+assert count == len(queries) * len(products) == 20_000_000
+```

@@ -109,4 +109,4 @@ Feedbackはdevelopment simulationで改善材料を集める。最後のproducti
 
 設定・秘密情報・保存先は05に従う。PoCのDeployはローカルsimulationのbundle切替であり商用配備ではない。参照repoは読み取り用で、アプリのruntime依存にしない。
 
-[未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。構造・責務変更はtaskで影響と検証を記録し、確定事項を本文へ反映する。
+[未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md) / [実装計画](./tasks/03_active/20260921-search-quality-poc-implementation.md)。構造・責務変更はtaskで影響と検証を記録し、確定事項を本文へ反映する。

@@ -13,11 +13,17 @@ failure detection / integrity
 - Class: **Standard**
 - Reason: ローカルsimulation、event結合、KPI成果物を追加する可逆な変更
 - Limits: max attempts 2 / max changed files 8 / protected path changes 0 / protected capability changes 0
-- Owner approval: 不要。ただしSimulationPolicy確定後に実行
+- Owner approval: 不要。既存仮置き方針に沿ってpolicyの詳細を固定する
 
 ## Context
 
-eventとKPI契約は05が正本。観測窓、位置バイアス、click/conversion/reformulation確率、distribution shiftは[未決事項](./20260921-search-quality-poc-decisions.md)に残る。
+eventとKPI契約は05が正本。`parts_sim_v1`、観測窓1800秒、`position_biased_cascade_v1`、paired streamは設定済み。位置バイアス関数、click/conversion/reformulation確率、分布shift条件は本タスクで仮置きを具体化して版付きpolicyへ固定する。event生成・集計は未実装。
+
+## 着手前の確認（2026-09-22整理）
+
+- 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
+- 依存: T4・T6待ち。simulation.enabled=falseは未実装による意図的な停止。
+- 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
 
 ## Scope
 
@@ -35,7 +41,7 @@ eventとKPI契約は05が正本。観測窓、位置バイアス、click/convers
 
 ## Plan
 
-1. SimulationPolicyを確定しversion付きで保存する。
+1. 設定済みpolicy ID・観測窓・方式を使い、確率と分布shift条件を具体化してversion付きで保存する。
 2. baseline/candidateで同じquery/session/乱数streamを使う。
 3. event生成・結合・観測窓確定を実装する。
 4. KPIとFailureCaseを生成する。
@@ -51,5 +57,5 @@ eventとKPI契約は05が正本。観測窓、位置バイアス、click/convers
 
 ## Stop / Ask Owner If
 
-- SimulationPolicyの確率・観測窓・分布shift条件が未確定のとき。
+- 仮置き方針の範囲を越えて、実ユーザーの行動データや実サービスの校正が必要になったとき。
 - 実サービス効果と読める主張を成果物へ追加する必要が出たとき。

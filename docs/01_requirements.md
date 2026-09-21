@@ -90,5 +90,5 @@
 要件の追加・変更は `docs/tasks/03_active/` または `docs/tasks/02_backlog/` に記録し、確定事項を本文へ反映する。
 
 - [商材・評価条件・技術選定の未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md)
-- [Golden Pathの段階的実装](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)
+- [Golden Pathの段階的実装](./tasks/03_active/20260921-search-quality-poc-implementation.md)
 - タスク一覧: [tasks/README.md](./tasks/README.md)

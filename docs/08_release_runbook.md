@@ -51,4 +51,4 @@
 
 実行証跡と復旧確認をtaskへ残し、恒久修正は対応する01〜08へ反映する。schema移行は新成果物へ行い、旧版からの復帰テストを追加する。
 
-関連: [04 手順](./04_workflows.md) / [05 保存契約](./05_data_model.md) / [06 エラー](./06_error_policy.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。
+関連: [04 手順](./04_workflows.md) / [05 保存契約](./05_data_model.md) / [06 エラー](./06_error_policy.md) / [実装計画](./tasks/03_active/20260921-search-quality-poc-implementation.md)。

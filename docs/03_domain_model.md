@@ -50,4 +50,4 @@ EvaluationRun → PromotionDecision → ReleaseBundle
 
 ## 関連タスク
 
-[未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。用語・状態変更時は05〜08への影響をtaskへ記録する。
+[未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md) / [実装計画](./tasks/03_active/20260921-search-quality-poc-implementation.md)。用語・状態変更時は05〜08への影響をtaskへ記録する。

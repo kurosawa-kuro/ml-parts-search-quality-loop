@@ -98,7 +98,7 @@ TREC qrelsは `query_id 0 product_id relevance`、runは `query_id Q0 product_id
 
 一般設定は `env/config.yaml`。ローカル秘密はignoreされた `env/secret.yaml`、共有秘密はDoppler等。既存成果物を破壊せず、schema変更時は新schema_versionと新IDへ変換し旧版を保持する。未対応版は読み込み拒否。変更taskには移行・互換・rollback検証を記録する。
 
-関連: [03](./03_domain_model.md) / [06](./06_error_policy.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。
+関連: [03](./03_domain_model.md) / [06](./06_error_policy.md) / [実装計画](./tasks/03_active/20260921-search-quality-poc-implementation.md)。
 
 ## ローカル初期設定
 

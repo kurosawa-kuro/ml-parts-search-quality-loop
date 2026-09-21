@@ -42,10 +42,10 @@ make build        # wheel / sdist build
 
 - 実装済み: 設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、foundation bootstrap、Golden Path 9段階の骨組み、**T1 レコード契約validatorと手書きfixture、T2 合成Catalog/Query/GT・family分割・大規模ストリーム処理**。
 - 未実装: 検索・Feature・学習・評価・FailureCase・疑似オンライン・ReleaseBundleの**実処理**（T3〜T8）。骨組みは`implemented: false`を明示する。
-- 実測（2026-09-22）: `make pipeline`で`contracts/catalog/judgments=completed` / 他5段階=`skeleton` / `simulation=blocked`（enabled=false）。未決事項は**全て仮置きで確定済み**。
+- 段階状態（2026-09-22、小規模CLI pipelineで検証）: `contracts/catalog/judgments=completed` / 他5段階=`skeleton` / `simulation=blocked`（enabled=false）。設定項目は仮置き済み。Feature列定義・simulation確率等の詳細はT5/T7で具体化する。
 - 依存の制約: **`numpy<2` / Python`<3.13`**（x86_64 mac -> torch 2.2.2 -> numpy<2 -> Python<3.13 の連鎖）。LightGBMは`brew install libomp`が必要。
-- 実装順: [マスタータスク](docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md)のT1〜T8。
-- owner判断待ち: [未決事項](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。
+- 実装順: [マスタータスク](docs/tasks/03_active/20260921-search-quality-poc-implementation.md)のT1〜T8。
+- 設定済み項目と後続の具体化・検証: [判断・設定台帳](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。
 
 ## アーキテクチャ
 
@@ -83,6 +83,6 @@ Thin Harness の常時手順。詳細は `.claude/README.md` と `docs/specs/run
 
 ## Taskの開始点
 
-T1は実装済み（`docs/tasks/03_active/`にVerification付きで記録）。T2も実装済み。次はT3 [Vector Baseline検索とSearchRun](docs/tasks/02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md)。各taskを`03_active`へ物理移動してから着手し、依存taskを飛ばさない。
+T1は基盤完了（`docs/tasks/05_done/`に証跡。未作成の正常fixtureはT3〜T6へ移管）。T2も実装済み。次はT3 [Vector Baseline検索とSearchRun](docs/tasks/02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md)。各taskを`03_active`へ物理移動してから着手し、依存taskを飛ばさない。
 
 T2以降はmanifestの版を検査し、`records`の`read_records`を通す。大規模GTは版/checksum/行契約付き`iter_judgments`を使う。各工程が自前で`json.load`すると、schema_version検査が抜けた経路が1本できる。

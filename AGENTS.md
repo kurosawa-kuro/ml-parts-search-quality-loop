@@ -9,7 +9,7 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 - 目的: 多言語部品検索の継続改善ループを再現するPoC
 - 主要技術: Python 3.11+ / uv / PyYAML / jsonschema。検索・学習本体は後続実装。
 - 現在地: foundation、Golden Path の骨組み、T1 の14レコード契約validatorと一部の手書きfixtureを実装済み。T2の合成Catalog/Query/GT・family分割・ストリーム処理も実装済み。contracts/catalog/judgmentsが実処理。検索・学習・評価以降は未実装。
-- 実装順: `docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md`のT1〜T8。次はT3のVector Baseline検索とSearchRun。T1の証跡・残りは `docs/tasks/03_active/2026-09-22-データ契約validatorと手書きfixture.md`。
+- 実装順: `docs/tasks/03_active/20260921-search-quality-poc-implementation.md`のT1〜T8。次はT3のVector Baseline検索とSearchRun。T1の証跡・残りは `docs/tasks/05_done/2026-09-22-データ契約validatorと手書きfixture.md`。
 
 ## セットアップ / 主要コマンド
 

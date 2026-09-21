@@ -19,6 +19,15 @@ failure detection / integrity
 
 MetricPolicy v1と手計算値は05・07が正本。評価はQuerySet全件を起点にし、runやGTに現れた行だけで平均してはならない。
 
+## 着手前の確認（2026-09-22整理）
+
+- 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
+- 依存: T1・T2は完了。T3のSearchRun待ち。
+- 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
+- T1からの引継ぎ: **Evaluation・FailureCaseの独立した正常fixture**を本タスクで追加する。
+
+`ir_measures 0.4.3`は導入・版設定済み。provider APIでpolicyを再現する実装・一致検証は本タスクに残る。
+
 ## Scope
 
 - MetricPolicy v1の指標計算とprovider版固定
@@ -34,13 +43,15 @@ MetricPolicy v1と手計算値は05・07が正本。評価はQuerySet全件を�
 
 ## Plan
 
-1. 手書きfixtureで指標を自前計算し期待値を固定する。
+1. T1の`tests/fixtures/metrics_expected.json`を独立オラクルとして使用し、指標計算を実装する。
 2. provider結果との一致とgain二重適用防止を検証する。
 3. QuerySet全件からEvaluationを生成する。
 4. SliceとFailureCaseへ根拠IDを残す。
 5. 不完全条件を`inconclusive`にする。
 
 ## Acceptance Criteria
+
+- T1から引き継いだEvaluation・FailureCaseの正常fixtureが契約検査を通る（生成器と独立した手書き例）。
 
 - 07の手計算fixtureと絶対誤差1e-9以内で一致する。
 - 正常0件は0、実行失敗・未実行はnullとして区別される。

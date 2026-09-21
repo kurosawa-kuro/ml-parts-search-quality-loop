@@ -5,7 +5,7 @@
 
 ## 現在地と実装順序
 
-要件のGolden PathとAC-001〜011を、次の8タスクで段階的に実装する。詳細な依存関係は[実装マスタータスク](docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md)を参照する。
+要件のGolden PathとAC-001〜011を、次の8タスクで段階的に実装する。詳細な依存関係は[実装マスタータスク](docs/tasks/03_active/20260921-search-quality-poc-implementation.md)を参照する。
 
 | # | 実装単位 | 状態 |
 |---|---|---|

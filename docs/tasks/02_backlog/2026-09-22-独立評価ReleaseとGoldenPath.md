@@ -19,6 +19,12 @@ safety / integrity
 
 [リリースRunbook](../../08_release_runbook.md)は手順契約だけでCLI未実装。PoC完了には独立評価でacceptedとなった改善例と、次のExperimentへ戻る証跡が必要。
 
+## 着手前の確認（2026-09-22整理）
+
+- 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
+- 依存: T1・T2は完了。T3〜T7の検索・評価・学習・Gate・simulation待ち。
+- 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
+
 ## Scope
 
 - Holdoutとproduction-likeの独立比較

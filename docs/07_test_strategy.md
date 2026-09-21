@@ -69,6 +69,6 @@ query単位の差分、平均、Slice件数、反復seedごとの値を保存す
 
 taskには実コマンド、入力manifest、結果、失敗理由、未検証範囲を残す。E2Eの最終成果物は比較結果・採否・ReleaseBundle・smoke・次のexperimentへの関係。モデル改善しなかった事実も保持する。品質改善を示すPoCの完了には、独立検証でacceptedとなった改善例が必要。
 
-関連: [01](./01_requirements.md) / [05](./05_data_model.md) / [08](./08_release_runbook.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。
+関連: [01](./01_requirements.md) / [05](./05_data_model.md) / [08](./08_release_runbook.md) / [実装計画](./tasks/03_active/20260921-search-quality-poc-implementation.md)。
 
 T2は`tests/test_synthetic.py`で独立GT例、family漏洩、単位、保存済み全直積、ストリームの中断/重複/版拒否を検査する。既定規模の2,000万行生成と読戻しは通常テストから分離し、T2 taskへ実測を記録する。

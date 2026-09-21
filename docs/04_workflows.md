@@ -90,7 +90,7 @@ uv run --locked parts-search config-check --stage retrieval
 
 失敗は [06](./06_error_policy.md) で分類する。永続成果物は上書きせず、新run_idとretry_ofを使う。再現はmanifestから同じ入力・設定・依存を復元する。seed一致だけでなく出力ID・順位・metricの許容差を [07](./07_test_strategy.md) で検証する。
 
-関連: [05 データ契約](./05_data_model.md) / [実装backlog](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。実コマンドの導入時はこの表とテスト・smokeを同じtaskで更新する。
+関連: [05 データ契約](./05_data_model.md) / [実装backlog](./tasks/03_active/20260921-search-quality-poc-implementation.md)。実コマンドの導入時はこの表とテスト・smokeを同じtaskで更新する。
 
 ## T2 の単独実行
 
