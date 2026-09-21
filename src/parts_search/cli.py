@@ -33,10 +33,13 @@ def build_parser() -> argparse.ArgumentParser:
     verify = commands.add_parser("verify-artifact", help="Verify a completed run and its checksums")
     verify.add_argument("run_dir", type=Path)
     commands.add_parser("stages", help="List Golden Path stages and their config dependencies")
-    stage = commands.add_parser("stage", help="Run one stage as a skeleton (writes no ML result)")
+    stage = commands.add_parser(
+        "stage", help="Run one stage; report unimplemented stages as skeleton"
+    )
     stage.add_argument("name", choices=STAGE_NAMES)
     stage.add_argument("--run-id")
-    pipeline = commands.add_parser("pipeline", help="Run every stage as a skeleton, in order")
+    stage.add_argument("--dataset", type=Path, help="Explicit catalog artifact for judgments")
+    pipeline = commands.add_parser("pipeline", help="Run every stage in dependency order")
     pipeline.add_argument(
         "--stop-on-block", action="store_true", help="Stop at the first stage blocked by config"
     )
@@ -53,11 +56,11 @@ def _stage_inventory() -> dict:
                 "artifact_group": stage.group,
                 "outputs": list(stage.outputs),
                 "summary": stage.summary,
-                "implemented": False,
+                "implemented": stage.implemented,
             }
             for stage in PIPELINE_STAGES
         ],
-        "implemented_count": 0,
+        "implemented_count": sum(stage.implemented for stage in PIPELINE_STAGES),
     }
 
 
@@ -85,14 +88,17 @@ def main(argv: list[str] | None = None) -> int:
             if args.command in ("stage", "pipeline"):
                 configure(settings.config["logLevel"])
                 if args.command == "stage":
-                    output = run_stage(settings, args.name, args.run_id)
+                    output = run_stage(settings, args.name, args.run_id, dataset=args.dataset)
                     blocked = output["status"] == "blocked"
+                    completed = output["status"] == "completed"
                 else:
                     output = run_pipeline(settings, args.stop_on_block)
                     blocked = bool(output["blocked_stages"])
+                    completed = output["golden_path_complete"]
                 print(json.dumps(output, ensure_ascii=False, indent=2))
-                # 骨組みは決して 0 を返さない。緑と見えてはいけない。
-                return EXIT_BLOCKED if blocked else EXIT_SKELETON
+                if blocked:
+                    return EXIT_BLOCKED
+                return EXIT_OK if completed else EXIT_SKELETON
             path = run_bootstrap(settings, args.run_id)
             output = {"run_dir": str(path), "ml_executed": False}
         print(json.dumps(output, ensure_ascii=False, indent=2))

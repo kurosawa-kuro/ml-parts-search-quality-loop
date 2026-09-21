@@ -32,16 +32,16 @@ Retrieval → CandidateSet → Feature Generation → Ranker → SearchRun
 
 | 構成要素 | 入力 → 出力 / 責務 | 予定パス |
 |---|---|---|
-| Catalog | 生成設定 → CatalogSnapshot・QuerySet・SplitManifest。GT用の潜在正解情報を検索入力へ露出しない | `src/parts_search_quality_loop/catalog/` |
-| Judgments | 属性・明示条件・判定根拠 → GroundTruthSnapshot。未判定・不適合を分離 | `src/parts_search_quality_loop/judgments/` |
-| Retrieval | catalog/index + Query + SearchConfiguration → CandidateSet・QueryOutcome | `src/parts_search_quality_loop/retrieval/` |
-| Features | query-product・取得score・時点属性 → FeatureDataset。学習/推論で共通生成 | `src/parts_search_quality_loop/features/` |
-| Ranker | FeatureDataset + train labels → ModelBundle、候補 + ModelBundle → SearchRun | `src/parts_search_quality_loop/ranker/` |
-| Evaluation | CandidateSet / SearchRun + GT + MetricPolicy → EvaluationRun。検索engineを呼ばない | `src/parts_search_quality_loop/evaluation/` |
-| Failure analysis | query別評価・Slice・event → FailureCase。原因分類と証拠を保持 | `src/parts_search_quality_loop/failure_analysis/` |
-| Feedback loop | 固定simulation条件 + SearchRun → Events・暗黙判定候補。評価GTを直接更新しない | `src/parts_search_quality_loop/feedback_loop/` |
-| Experiments | 設定凍結、run実行・入力照合、成果物公開、比較・採否 | `src/parts_search_quality_loop/experiments/` |
-| Artifacts | manifest・checksum・JSON/JSONL・TREC adapter、版互換検査 | `src/parts_search_quality_loop/artifacts/` |
+| Catalog | 生成設定 → CatalogSnapshot・QuerySet・SplitManifest。GT用の潜在正解情報を検索入力へ露出しない | `src/parts_search/catalog/` |
+| Judgments | 属性・明示条件・判定根拠 → GroundTruthSnapshot。未判定・不適合を分離 | `src/parts_search/judgments/` |
+| Retrieval | catalog/index + Query + SearchConfiguration → CandidateSet・QueryOutcome | `src/parts_search/retrieval/` |
+| Features | query-product・取得score・時点属性 → FeatureDataset。学習/推論で共通生成 | `src/parts_search/features/` |
+| Ranker | FeatureDataset + train labels → ModelBundle、候補 + ModelBundle → SearchRun | `src/parts_search/ranker/` |
+| Evaluation | CandidateSet / SearchRun + GT + MetricPolicy → EvaluationRun。検索engineを呼ばない | `src/parts_search/evaluation/` |
+| Failure analysis | query別評価・Slice・event → FailureCase。原因分類と証拠を保持 | `src/parts_search/failure_analysis/` |
+| Feedback loop | 固定simulation条件 + SearchRun → Events・暗黙判定候補。評価GTを直接更新しない | `src/parts_search/feedback_loop/` |
+| Experiments | 設定凍結、run実行・入力照合、成果物公開、比較・採否 | `src/parts_search/experiments/` |
+| Artifacts | manifest・checksum・JSON/JSONL・TREC adapter、版互換検査 | `src/parts_search/artifacts/` |
 | エージェントガイド | Codex / 他エージェント共通方針 | `AGENTS.md` |
 | Claudeガイド / skills | Claude Codeの指示と繰り返し手順 | `CLAUDE.md` / `.claude/skills/` |
 | タスク文書 | 作業計画・証跡・残件 | `docs/tasks/` |
@@ -50,7 +50,7 @@ Retrieval → CandidateSet → Feature Generation → Ranker → SearchRun
 
 ## 実装済みの土台
 
-Pythonのsrc packageを`src/parts_search_quality_loop/`に置く。`config/`は厳密なYAMLと工程別設定検査、`artifacts/store.py`はrunの原子的保存とchecksum検証、`pipelines/bootstrap.py`は公開設定snapshotからrunを作る。`cli.py`がconfig-check / bootstrap / verify-artifactを公開する。
+Pythonのsrc packageを`src/parts_search/`に置く。`config/`は厳密なYAMLと工程別設定検査、`artifacts/store.py`はrunの原子的保存とchecksum検証、`pipelines/bootstrap.py`は公開設定snapshotからrunを作る。`cli.py`がconfig-check / bootstrap / verify-artifactを公開する。
 
 bootstrapはML工程と独立し、quality gateの未設定を成功に変換しない。成果物には`kind=foundation_bootstrap`と`ml_executed=false`を記録する。モデルmanifestや検索成果物schemaは後続実装とする。
 

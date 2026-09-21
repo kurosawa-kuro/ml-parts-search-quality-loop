@@ -53,3 +53,21 @@ integrity / collection accuracy
 
 - カテゴリ構成、必須属性、数値許容差、代替条件が未確定のとき。
 - 生成規則だけでは曖昧な自然文を一意に判定できないとき。
+
+## 引き継ぎ時の実装準備（2026-09-22）
+
+- T1 の再検証と CLI 接続漏れ修正を実施。85 passed, 2 deselected、lint/build 成功。
+  T2 の生成器はまだ未実装。
+- 商材 policy の内容は、[仮置き判断](./20260921-search-quality-poc-decisions.md)の
+  「全項目を仮置きで確定した」に沿って T2 で具体化できる。古い owner 判断待ちの記述だけで停止しない。
+- `read_records` は集合全体を list にし、JSONL 読込は 256 MiB 上限。
+  `publish_run` も JSONL の list と全出力 bytes をメモリへ保持する。
+  既定の 10,000 SKU × 1,000 family に JA/EN 各1件を作るだけでも GT は2,000万行になる。
+  完全判定を省略せず、ストリーム生成・検査・checksum・原子的公開を含む実装計画にする。
+- `validate_split_disjoint` は現在 assignments の値が文字列かを調べるだけ。
+  T2 では許可 split、全 family の割当、翻訳・派生 query の同一 family、件数と digest を検証する。
+- `schema_version` は I/O で検査する一方、行契約の許可項目には含まれない。
+  metadata に version を持つ場合は、それを検査してから `read_records` を呼ぶ。
+  GT 大規模読込用 API を足す際も、この検査を抜かない。
+- 最初に小規模の独立 fixture と決定性・漏洩・GT優先順位のテストを作り、
+  続いて既定規模の生成を実測する。Catalog/Query 入力へ GT の rule_id や生成時の正解IDを混入させない。

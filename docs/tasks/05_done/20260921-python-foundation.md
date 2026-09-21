@@ -7,7 +7,7 @@
 ## Skeleton
 
 - `pyproject.toml` / `uv.lock` / Makefile: src layout、依存固定、実テスト・lint・build。
-- `src/parts_search_quality_loop/config/`: 厳密なYAMLとschema検証、パス解決、工程別未設定一覧、秘密値の別読込。
+- `src/parts_search/config/`: 厳密なYAMLとschema検証、パス解決、工程別未設定一覧、秘密値の別読込。
 - `artifacts/`: JSON/JSONL、sha256、run manifest、原子的公開と検証。
 - `pipelines/bootstrap.py`: 設定snapshotと未設定レポートを1つのrunへ保存する実行経路。
 - `cli.py`: config-check / bootstrap / verify-artifact。未実装MLを成功扱いしない。

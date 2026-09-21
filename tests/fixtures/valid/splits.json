@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "split_id": "handwritten-split",
+  "assignments": {
+    "f1": "train",
+    "f2": "tuning",
+    "f3": "holdout",
+    "f4": "production"
+  },
+  "generation_seed": 43,
+  "split_seed": 44,
+  "counts": {
+    "train": 1,
+    "tuning": 1,
+    "holdout": 1,
+    "production": 1
+  },
+  "set_digest": "288f5a8ffb1c767c49270683d7eb697b007d6e57604b5fed6df687b097ff9a51"
+}

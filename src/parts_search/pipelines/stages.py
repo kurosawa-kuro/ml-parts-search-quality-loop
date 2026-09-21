@@ -61,14 +61,16 @@ STAGES: tuple[Stage, ...] = (
         group="datasets",
         outputs=("catalog.jsonl", "queries.jsonl", "splits.json"),
         summary="合成カタログ・Query・GT と family 分割",
+        implemented=True,
     ),
     Stage(
         name="judgments",
         task="T2",
         config_stage="catalog",
         group="judgments",
-        outputs=("judgments.jsonl",),
+        outputs=("judgments.jsonl", "summary.json"),
         summary="GT policy v1 による完全判定 GT",
+        implemented=True,
     ),
     Stage(
         name="retrieval",

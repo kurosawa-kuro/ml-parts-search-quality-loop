@@ -1,13 +1,4 @@
-"""段階を「実行してログを出して終わる」だけの骨組み。
-
-意図的に何も計算しない。目的は次の 2 つだけ。
-
-1. Golden Path の段数・依存順・成果物配置を**実行可能な形で**固定する。
-2. **どの段階が設定未確定で止まるか**を実測で出す（未決事項への写像）。
-
-`docs/specs/evidence-policy.md` の下限に従い、骨組みの実行は
-Evidence Level 1（成果物が実在する）どまりであることを payload に明示する。
-"""
+"""Execute implemented stages and preserve explicit placeholders for the remainder."""
 
 from __future__ import annotations
 
@@ -18,7 +9,9 @@ from parts_search.errors import FoundationError
 from parts_search.logs import logger
 from parts_search.pipelines.bootstrap import provenance
 from parts_search.pipelines.contracts_report import build_contracts_report
+from parts_search.pipelines.judgments import build_judgments
 from parts_search.pipelines.stages import STAGES, Stage, stage_by_name
+from parts_search.pipelines.synthetic import build_dataset
 from parts_search.runstore import new_run_id, publish_run
 
 # 段階の結果。blocked と skeleton を区別する（前者は設定待ち、後者は実装待ち）。
@@ -41,11 +34,17 @@ def _outputs(stage: Stage) -> dict[str, object]:
     return {name: ([] if name.endswith(".jsonl") else payload) for name in stage.outputs}
 
 
-def run_stage(settings: Settings, name: str, run_id: str | None = None) -> dict[str, object]:
+def run_stage(
+    settings: Settings, name: str, run_id: str | None = None, *, dataset: Path | None = None
+) -> dict[str, object]:
     """1 段階を実行する。設定が未確定なら成果物を作らず blocked を返す。"""
     stage = stage_by_name(name)
     log = logger()
     blockers = settings.blockers(stage.config_stage)
+    if name == "judgments" and dataset is None:
+        blockers.append("input.dataset")
+    if dataset is not None and name != "judgments":
+        raise FoundationError("Dataset input is only supported by the judgments stage")
 
     if blockers:
         # 設定が埋まっていない段階で成果物を publish すると、manifest の
@@ -68,24 +67,33 @@ def run_stage(settings: Settings, name: str, run_id: str | None = None) -> dict[
     identifier = run_id or new_run_id()
     destination = settings.artifacts_root / stage.group
     builder = _IMPLEMENTED.get(stage.name)
-    status = COMPLETED if builder else SKELETON
-    log.info("stage=%s task=%s status=%s id=%s", stage.name, stage.task, status, identifier)
-    outputs = builder() if builder else _outputs(stage)
+    implemented = stage.implemented
+    status = COMPLETED if implemented else SKELETON
+    log.info("stage=%s task=%s starting id=%s", stage.name, stage.task, identifier)
+    metadata = {}
+    if name == "catalog":
+        outputs, metadata = build_dataset(settings.config)
+    elif name == "judgments":
+        outputs, metadata = build_judgments(settings.config, dataset)
+    else:
+        outputs = builder() if builder else _outputs(stage)
     path = publish_run(
         destination,
         identifier,
         outputs,
         {
+            **metadata,
             "kind": f"{status}_{stage.name}",
             "stage": stage.name,
             "task": stage.task,
-            "implemented": bool(builder),
-            "evidence_level": 2 if builder else 1,
+            "implemented": implemented,
+            "evidence_level": 2 if implemented else 1,
             "provenance": provenance(settings.root),
         },
     )
     for output in stage.outputs:
         log.debug("stage=%s wrote=%s", stage.name, output)
+    log.info("stage=%s status=%s id=%s", stage.name, status, identifier)
     return {
         "stage": stage.name,
         "task": stage.task,
@@ -93,21 +101,25 @@ def run_stage(settings: Settings, name: str, run_id: str | None = None) -> dict[
         "config_stage": stage.config_stage,
         "blockers": [],
         "artifact": str(path),
-        "implemented": bool(builder),
+        "implemented": implemented,
     }
 
 
 def run_pipeline(settings: Settings, stop_on_block: bool = False) -> dict[str, object]:
     """全段階を依存順に実行する。
 
-    `golden_path_complete` は**常に False** になる（実装が無いため）。
-    ここが True になるのは各段階の実装が入ったときだけで、
+    `golden_path_complete` が True になるのは全段階の実処理が完了したときだけで、
     骨組みの完走を Golden Path の達成と読み替えさせない。
     """
     log = logger()
     results: list[dict[str, object]] = []
+    dataset = None
     for stage in STAGES:
-        result = run_stage(settings, stage.name)
+        result = run_stage(
+            settings, stage.name, dataset=dataset if stage.name == "judgments" else None
+        )
+        if stage.name == "catalog" and result["status"] == COMPLETED:
+            dataset = Path(result["artifact"])
         results.append(result)
         if stop_on_block and result["status"] == BLOCKED:
             log.error("pipeline stopped at stage=%s (blocked)", stage.name)

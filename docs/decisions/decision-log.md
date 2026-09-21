@@ -36,3 +36,46 @@ task note は1タスクに閉じるので「最近このエージェントは曖
 ---
 
 _まだ判断は記録されていません。`log-decision` が末尾に追記します。_
+
+
+## 2026-09-22T00:40Z — .gitignore の非アンカー `artifacts/` がソースを飲んでいた事故を修正し、同名衝突を改名で封じた
+- type: rollback
+- 根拠 (why): owner「パスが冗長というか、重複バグ問題」。調査すると `.gitignore` の素の `artifacts/` が成果物ディレクトリだけでなくソースモジュール `src/.../artifacts/` にも当たり、run 公開・検証の中核 store.py が git から欠落。git archive 相当で `ModuleNotFoundError: parts_search_quality_loop.artifacts` を実測。パターンを `/artifacts/` へアンカーし、衝突源のモジュールを `runstore.py` へ平坦化・改名して同種事故を名前で封じた。
+- 影響範囲 (blast radius): 新規 clone が import 不能という致命的欠落だった。パッケージも `parts_search_quality_loop` → `parts_search`（CLI 名と一致、repo 名の繰り返しを除去）へ改名し 13 ファイルの参照を更新。git 管理下なので可逆。
+- 撤退条件 (stop/revert): 改名で外部参照が壊れる場合は revert（配布前・利用者ゼロのため影響なしと判断）。
+- 結果 (outcome): win
+- link: tests/test_tooling.py
+
+## 2026-09-22T00:45Z — テスト runner を unittest から pytest へ移した（様式ではなく契約が要求）
+- type: approach-choice
+- 根拠 (why): owner「論理的に適切な選択でテストを整備せよ」。07_test_strategy は実 engine での結合テストを要求し、rules/tests.md は「実接続テストは明示マークで分け既定の make test から外す」と定める。**unittest に marker 機構が無くこの分離が実装できない**ため、pytest は要求を満たす唯一の選択。既存 TestCase は pytest がそのまま実行するので期待値の書き換えは不要（弱めていない）。
+- 影響範囲 (blast radius): Makefile の test ターゲットと dev 依存。既存 34 テストの期待値は不変。marker 設定だけでは分離の保証にならないため、分離が効いていること自体を test_tooling.py で検査。
+- 撤退条件 (stop/revert): pytest 固有機能に依存した箇所は無いので unittest へ戻せる。
+- 結果 (outcome): win
+- link: docs/07_test_strategy.md
+
+
+## 2026-09-22T01:00Z — Embedding 実行ライブラリを実測し、自分の推奨（fastembed 第一候補 / multilingual-e5-small）を撤回
+- type: rollback
+- 根拠 (why): owner「問題発覚時点でつぶしなさい」。revision 固定可否を「T3 着手時に実測」と先送りしたのが誤り。両候補を実際に導入して確認した結果、fastembed 0.8.0 は `revision` param を持たず、`multilingual-e5-small` もレジストリに無い（`multilingual-e5-large` 1024dim/2.24GB のみ）。05 の「index は embedding revision の checksum から識別」を実装できない。sentence-transformers 3.0.1 は `revision` / `local_files_only` を持ち契約を満たす。
+- 影響範囲 (blast radius): T3 の実装前提。先送りしたまま fastembed で実装したら、index 同一性の契約を破った状態が後から発覚し、再現性の根拠が崩れていた。torch 依存を受け入れる判断が新たに要る。
+- 撤退条件 (stop/revert): owner が軽さを優先して fastembed を採るなら、05 の revision 契約を「fastembed バージョン + モデル名」へ緩める改訂が必要。契約を黙って破らない。
+- 結果 (outcome): open
+- link: docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md
+
+
+## 2026-09-22T01:30Z — 未決事項を全部「論理的に妥当な仮置き」で確定させ、blocked を 8/9 -> 1/9 にした
+- type: default-taken
+- 根拠 (why): owner「どうせ実測しないとわからないから一旦論理的に正しそうな選択肢で仮置きしか不可能では。当たり前の事になぜコストかけて止まってる」。正しい。最適値は実データで動かすまで決まらないので、既定を置いて進める方が情報が早く手に入る。owner 判断を待つ形にしていたのが誤り。
+- 影響範囲 (blast radius): env/config.yaml の 13 項目。すべて設定値なので後から変更可能。品質 Gate のしきい値（NDCG +0.01 等）は baseline 測定後に必ず見直す前提。
+- 撤退条件 (stop/revert): 実測後に閾値・policy を上書きする。仮置きであることを decisions doc に明記した。
+- 結果 (outcome): win
+- link: docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md
+
+## 2026-09-22T01:35Z — 依存を実導入し、制約の連鎖（x86_64 -> torch 2.2.2 -> numpy<2 -> Python<3.13）を確定
+- type: risk-accepted
+- 根拠 (why): 依存追加を「T3 実装時に」と先送りしていたのも誤り。実際に入れたところ (1) numpy 2.x + torch 2.2.2 が RuntimeError (2) qdrant-client が Python 3.14 で numpy>=2.3 を要求して lock 解決不能 (3) lightgbm が libomp 不在で dlopen 失敗、の 3 件が判明。いずれも後の工程で必ず踏む。
+- 影響範囲 (blast radius): requires-python を >=3.11,<3.13 へ狭めた。numpy<2 が全体制約になり、今後のライブラリ選定がこれに縛られる。torch でインストールは重くなる。
+- 撤退条件 (stop/revert): arm64 Mac へ移れば torch の上限が外れ制約が緩む。その時に requires-python と numpy を見直す。
+- 結果 (outcome): win
+- link: pyproject.toml

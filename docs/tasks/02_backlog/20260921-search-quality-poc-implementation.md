@@ -6,7 +6,9 @@
 
 ## Context
 
-設定検証・foundation CLI・ローカルrun保存とMakefileの実テスト/整形/buildを実装済み。検索・GT・学習・評価は未実装。先に [未決事項](./20260921-search-quality-poc-decisions.md) の該当契約を確定する。
+設定検証・foundation CLI・ローカルrun保存とMakefileの実テスト/整形/buildを実装済み。**Golden Path 9段階の骨組みも実装済み**（実処理なし）。検索・GT・学習・評価の実処理は未実装。先に [未決事項](./20260921-search-quality-poc-decisions.md) の該当契約を確定する。
+
+骨組みを `make pipeline` で走らせると、**未決事項がどの段階を止めているか**が実測で出る（2026-09-22 時点で 9 段階中 8 段階が blocked）。着手順の判断材料に使える。
 
 ## Scope / Plan
 
@@ -24,6 +26,7 @@
 | T8 | [独立評価・Release・Golden Path](./2026-09-22-独立評価ReleaseとGoldenPath.md) | AC-001〜011 | T1〜T7 |
 
 - [x] 設定schema、foundation runのJSON/JSONL・manifest保存と改変検証。
+- [x] Golden Path 9段階の骨組み（段階定義・成果物配置・blocker報告・ログ・終了コード 0/1/2/3）。実処理は未実装で`implemented: false`を明示。`make stages` / `make pipeline`で実行できる。
 - [ ] T1〜T8を依存順に完了する。
 - [x] foundation CLIとMakefile、設定・成果物の実テストを接続。
 - [ ] 各taskで対応するML工程CLI、07の品質テスト、08のsmokeコマンドを実装。

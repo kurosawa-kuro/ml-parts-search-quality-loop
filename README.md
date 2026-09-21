@@ -50,7 +50,7 @@ make fmt lint test build
 ## 構成
 
 ```text
-src/parts_search_quality_loop/
+src/parts_search/
   cli.py                 argparseの入口
   config/                厳密なYAML・schema・パス・工程別検証
   artifacts/             JSON/JSONL・checksum・原子的run公開

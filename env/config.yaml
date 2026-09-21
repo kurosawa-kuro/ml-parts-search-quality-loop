@@ -27,7 +27,7 @@ catalog:
   languages: [ja, en]
   seed: 42
   # カテゴリ別の属性・単位・許容差を定義した後に設定する。
-  attributePolicyId: null
+  attributePolicyId: fa_parts_attr_v1
 
 queries:
   familyCount: 1000
@@ -61,10 +61,12 @@ retrieval:
     timeoutSeconds: 15
     apiKeySecret: DB_QDRANT_API_KEY
   embedding:
-    # モデル選定・固定revisionの解決は未完了。
-    modelId: null
-    revision: null
-    preprocessingVersion: null
+    # 決定 2026-09-22。revision は必ず commit SHA（タグ・main 不可）。
+    # 05「index は catalog・embedding revision・前処理設定の checksum から識別」を満たすため。
+    # 実測: sentence-transformers 3.0.1 で revision 指定ロード・384dim・決定的を確認済み。
+    modelId: intfloat/multilingual-e5-small
+    revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+    preprocessingVersion: parts_e5_v1
   hybrid:
     enabled: false
   structuredFilter:
@@ -72,7 +74,7 @@ retrieval:
 
 features:
   # 型・順序・欠損規約を定義したFeatureSchemaへ結びつける。
-  schemaId: null
+  schemaId: parts_features_v1
 
 ranker:
   implementation: lightgbm
@@ -91,8 +93,8 @@ evaluation:
   policyId: parts_metrics_v1
   implementation: ir_measures
   # 導入時に互換性を確認して依存lockとともに固定する。
-  version: null
-  provider: null
+  version: '0.4.3'
+  provider: ir_measures
   ndcgCutoff: 10
   recallCutoff: 100
   mrrCutoff: 100
@@ -106,23 +108,23 @@ evaluation:
 
 qualityGate:
   # baseline測定後、candidate比較前に固定。nullなら採用判定不可。
-  policyId: null
-  minNdcgDelta: null
+  policyId: parts_gate_v1
+  minNdcgDelta: 0.01
   maxRegression:
-    recallAt100: null
-    mrrAt100: null
-    sliceNdcgAt10: null
-    searchSuccessRate: null
-    wrongFitmentRate: null
-  minSliceQueries: null
-  repetitionSeeds: null
+    recallAt100: 0.01
+    mrrAt100: 0.01
+    sliceNdcgAt10: 0.01
+    searchSuccessRate: 0.01
+    wrongFitmentRate: 0.005
+  minSliceQueries: 30
+  repetitionSeeds: [11, 22, 33]
 
 simulation:
-  # 観測窓・行動確率・位置バイアス・分布shiftを固定するまで無効。
+  # 仮置き 2026-09-22。enabled は T7 着手時に true へ。
   enabled: false
-  policyId: null
-  observationWindowSeconds: null
-  behaviorModel: null
+  policyId: parts_sim_v1
+  observationWindowSeconds: 1800
+  behaviorModel: position_biased_cascade_v1
   developmentSplit: tuning
   validationSplit: production
   pairedRandomStreams: true

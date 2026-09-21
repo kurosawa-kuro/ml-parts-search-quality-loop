@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from itertools import islice
 from pathlib import Path
 from typing import Any
 
 from parts_search.errors import FoundationError
 from parts_search.records.contracts import SCHEMA_VERSION
 from parts_search.records.validate import validate
+from parts_search.runstore import verify_run
 
 MAX_BYTES = 256 * 1024 * 1024
 
@@ -40,7 +42,7 @@ def read_json(path: Path) -> dict:
     return data
 
 
-def iter_jsonl(path: Path) -> Iterator[dict]:
+def iter_jsonl(path: Path, *, max_bytes: int | None = MAX_BYTES) -> Iterator[dict]:
     """JSONL を 1 行ずつ返す。
 
     **空ファイルは 0 件として正常に返す**（0 件は結果であり、失敗ではない）。
@@ -48,7 +50,7 @@ def iter_jsonl(path: Path) -> Iterator[dict]:
     行ごとに version を要求せず、同梱 manifest 側で持つ形もあるため。
     """
     try:
-        if path.stat().st_size > MAX_BYTES:
+        if max_bytes is not None and path.stat().st_size > max_bytes:
             raise FoundationError("JSONL document exceeds size limit")
         with path.open(encoding="utf-8") as handle:
             for number, line in enumerate(handle, start=1):
@@ -81,3 +83,38 @@ def read_records(name: str, path: Path) -> list[dict]:
             f"{name} records violate the contract ({len(issues)} issue(s); first: {issues[0]})"
         )
     return rows
+
+
+def iter_judgments(artifact: Path, *, batch_size: int = 10000) -> Iterator[dict]:
+    """Read a verified GT artifact without materializing its Cartesian product.
+
+    The consumer must exhaust the iterator to check the final row count. T2 writes
+    strictly increasing (gt_id, query_id, product_id), permitting global duplicate
+    detection across batch boundaries with constant memory.
+    """
+    if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+        raise FoundationError("Judgment batch size must be a positive integer")
+    manifest = read_json(artifact / "manifest.json")
+    verify_run(artifact)
+    metadata = manifest.get("metadata", {})
+    if metadata.get("stage") != "judgments" or metadata.get("implemented") is not True:
+        raise FoundationError("Expected an implemented judgments artifact")
+    summary = read_json(artifact / "summary.json")
+    rows = iter_jsonl(artifact / "judgments.jsonl", max_bytes=None)
+    previous = None
+    count = 0
+    while batch := list(islice(rows, batch_size)):
+        issues = validate("Judgment", batch)
+        if issues:
+            raise FoundationError(f"Judgment contract violation: {issues[0]}")
+        for row in batch:
+            key = (row["gt_id"], row["query_id"], row["product_id"])
+            if row["gt_id"] != metadata.get("gt_id") or (previous is not None and key <= previous):
+                raise FoundationError(
+                    "Judgment identity is duplicated, unordered or uses wrong gt_id"
+                )
+            previous = key
+            count += 1
+            yield row
+    if count != summary.get("rows") or count != summary.get("expected_rows"):
+        raise FoundationError("Judgment row count does not match complete Cartesian coverage")

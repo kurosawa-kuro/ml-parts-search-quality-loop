@@ -33,6 +33,8 @@ class SkeletonTest(unittest.TestCase):
         self.root = Path(self.tmp.name).resolve()
         (self.root / "env").mkdir()
         self.config = yaml.safe_load((REPO / "env/config.yaml").read_text())
+        self.config["catalog"]["skuCount"] = 30
+        self.config["queries"]["familyCount"] = 20
         self.project = dict(
             schemaVersion=1,
             projectName=self.config["projectName"],
@@ -99,7 +101,7 @@ class SkeletonTest(unittest.TestCase):
         self.assertFalse((self.root / "artifacts/runs").exists())
 
     def test_stage_runs_once_configuration_is_filled(self):
-        result = run_stage(self.settings(), "catalog")
+        result = run_stage(self.settings(), "retrieval")
         self.assertEqual(result["status"], SKELETON)
         published = Path(str(result["artifact"]))
         self.assertTrue((published / "manifest.json").is_file())
@@ -109,11 +111,17 @@ class SkeletonTest(unittest.TestCase):
 
     def test_empty_jsonl_is_not_presented_as_a_result(self):
         """0 件の JSONL だけを見て「結果が空だった」と読めてはいけない。"""
-        result = run_stage(self.settings(), "catalog")
+        result = run_stage(self.settings(), "training")
         published = Path(str(result["artifact"]))
-        self.assertEqual((published / "catalog.jsonl").read_bytes(), b"")
-        payload = json.loads((published / "splits.json").read_text())
+        payload = json.loads((published / "feature_schema.json").read_text())
         self.assertIs(payload["implemented"], False)
+
+    def test_unimplemented_retrieval_keeps_empty_rows_explicitly_marked(self):
+        result = run_stage(self.settings(), "retrieval")
+        published = Path(str(result["artifact"]))
+        self.assertEqual((published / "results.jsonl").read_bytes(), b"")
+        manifest = json.loads((published / "manifest.json").read_text())
+        self.assertIs(manifest["metadata"]["implemented"], False)
 
     # --- pipeline 全体 ---
 
@@ -191,15 +199,52 @@ class SkeletonTest(unittest.TestCase):
         self.assertIs(payload["golden_path_complete"], False)
 
     def test_cli_stage_exit_three_when_only_skeleton(self):
-        completed = self.cli("stage", "contracts")
+        completed = self.cli("stage", "retrieval")
         self.assertEqual(completed.returncode, 3, "実装が無いので skeleton=3")
+
+    def test_cli_completed_stage_exits_zero(self):
+        completed = self.cli("stage", "contracts")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["status"], "completed")
+        self.assertIs(payload["implemented"], True)
+
+    def test_cli_catalog_to_judgments_uses_explicit_input(self):
+        missing = self.cli("stage", "judgments")
+        self.assertEqual(missing.returncode, 2)
+        catalog = self.cli("stage", "catalog")
+        self.assertEqual(catalog.returncode, 0, catalog.stderr)
+        dataset = json.loads(catalog.stdout)["artifact"]
+        judgments = self.cli("stage", "judgments", "--dataset", dataset)
+        self.assertEqual(judgments.returncode, 0, judgments.stderr)
+        path = Path(json.loads(judgments.stdout)["artifact"])
+        summary = json.loads((path / "summary.json").read_text())
+        self.assertEqual(summary["rows"], 1200)
+        self.assertEqual(summary["status"], "complete")
+        rejected = self.cli("stage", "catalog", "--dataset", dataset)
+        self.assertEqual(rejected.returncode, 1)
+
+    def test_cli_blocked_stage_exits_two_without_artifact(self):
+        completed = self.cli("stage", "simulation")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        self.assertIsNone(json.loads(completed.stdout)["artifact"])
+
+    def test_cli_unblocked_incomplete_pipeline_exits_three(self):
+        self.config["simulation"]["enabled"] = True
+        self.write()
+        completed = self.cli("pipeline")
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        self.assertIs(json.loads(completed.stdout)["golden_path_complete"], False)
 
     def test_cli_stages_inventory_is_honest(self):
         completed = self.cli("stages")
         self.assertEqual(completed.returncode, 0)
         payload = json.loads(completed.stdout)
-        self.assertEqual(payload["implemented_count"], 0)
-        self.assertTrue(all(s["implemented"] is False for s in payload["stages"]))
+        expected = {stage.name: stage.implemented for stage in STAGES}
+        self.assertEqual(payload["implemented_count"], sum(expected.values()))
+        self.assertEqual(
+            {stage["stage"]: stage["implemented"] for stage in payload["stages"]}, expected
+        )
 
     def test_cli_logs_go_to_stderr_so_stdout_stays_json(self):
         completed = self.cli("stage", "contracts")

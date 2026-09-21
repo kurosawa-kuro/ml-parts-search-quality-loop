@@ -8,6 +8,7 @@ import re
 import shutil
 import tempfile
 import uuid
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -20,6 +21,11 @@ def new_run_id() -> str:
 
 def checksum(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def file_checksum(path: Path) -> str:
+    with path.open("rb") as handle:
+        return hashlib.file_digest(handle, "sha256").hexdigest()
 
 
 def _name(value: str) -> None:
@@ -57,18 +63,24 @@ def publish_run(runs: Path, run_id: str, outputs: dict, metadata: dict) -> Path:
         hashes = {}
         for name, data in outputs.items():
             if name.endswith(".jsonl"):
-                if not isinstance(data, list):
-                    raise FoundationError("JSONL output requires a list of records")
-                raw = b"".join(
-                    (
-                        json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False) + "\n"
-                    ).encode()
-                    for row in data
-                )
+                if not isinstance(data, Iterable) or isinstance(data, (str, bytes, dict)):
+                    raise FoundationError("JSONL output requires an iterable of records")
+                digest = hashlib.sha256()
+                with (stage / name).open("wb") as handle:
+                    for row in data:
+                        if not isinstance(row, dict):
+                            raise FoundationError("JSONL record must be an object")
+                        raw = (
+                            json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False)
+                            + "\n"
+                        ).encode("utf-8")
+                        handle.write(raw)
+                        digest.update(raw)
+                hashes[name] = digest.hexdigest()
             else:
                 raw = _json_bytes(data)
-            (stage / name).write_bytes(raw)
-            hashes[name] = checksum(raw)
+                (stage / name).write_bytes(raw)
+                hashes[name] = checksum(raw)
         manifest = dict(
             schema_version=1,
             run_id=run_id,
@@ -115,7 +127,7 @@ def verify_run(path: Path) -> dict:
                 raise FoundationError("Artifact must be a regular local file")
             if not isinstance(expected, str) or not re.fullmatch("[a-f0-9]{64}", expected):
                 raise FoundationError("Invalid artifact checksum")
-            if checksum(target.read_bytes()) != expected:
+            if file_checksum(target) != expected:
                 raise FoundationError("Artifact checksum mismatch")
         return manifest
     except (OSError, ValueError, KeyError, TypeError):

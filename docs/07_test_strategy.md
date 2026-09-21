@@ -9,7 +9,18 @@ make fmt lint test build
 git diff --check
 ```
 
-unittestはYAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行を検証する。Ruffで整形とlint、uv buildで配布物を検証する。実Qdrant・学習・指標・ReleaseBundleのテストを通したという意味ではない。
+runnerは**pytest**。既存のテストは`unittest.TestCase`のままpytestが実行する（期待値は変えていない）。
+
+pytestを選ぶ理由は様式ではなく契約である。本文書は「選定した検索engineのローカル実体で結合テストを行う」と定め、[テストルール](../.claude/rules/tests.md)は「実接続テストは明示マークで分け、既定の`make test`から外す」と定める。**unittestにmarker機構は無く、この分離を実装できない。**
+
+| コマンド | 対象 |
+|---|---|
+| `make test` | 単体・CLI結合のみ（`-m 'not integration'`） |
+| `make test-all` | `integration` markerを含む全件（ローカルサービスが必要） |
+
+`--strict-markers`により綴り違いのmarkerは静かに無視されず失敗する。marker分離が実際に効いていること自体を`tests/test_tooling.py`が検査する（設定を書いただけでは保証にならない）。
+
+検証範囲: YAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行・Golden Path骨組みの段階定義と終了コード・パッケージレイアウトの退行。Ruffで整形とlint、uv buildで配布物を検証する。**実Qdrant・学習・指標・ReleaseBundleのテストを通したという意味ではない**（`make test-all`は現在T3未実装で失敗する。これが正しい状態）。
 
 ## 実装時のテスト契約
 

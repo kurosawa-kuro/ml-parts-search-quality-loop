@@ -24,24 +24,33 @@ make setup        # uv.lockから.venvへ依存導入
 make config-check # foundation設定検証
 make run          # foundation run作成。検索・学習は実行しない
 make dev          # make runと同じ。開発サーバーではない
-make test         # unittestとCLI結合テスト
+make stages       # Golden Path 9段階と依存設定の一覧
+make pipeline     # 9段階を骨組み実行。exit 2=blocked / 3=skeletonのみ
+make test         # pytest。単体・CLI結合のみ（integration markerを除外）
+make test-all     # integration markerも実行。現在T3未実装で失敗するのが正
 make fmt          # Ruff import修正・format
 make lint         # Ruff lint・format check
 make build        # wheel / sdist build
 ```
 
-現在のCLIは`config-check`、`bootstrap`、`verify-artifact`のみ。Retrieval、GT生成、学習、評価、simulation、releaseのCLIは未実装。
+現在のCLIは`config-check`、`bootstrap`、`verify-artifact`、`stages`、`stage`、`pipeline`。
+`stage` / `pipeline`は**骨組み**で、Retrieval、GT生成、学習、評価、simulation、releaseの実処理は未実装。
+
+**終了コード**: 0=完了 / 1=エラー / 2=設定未確定で停止 / 3=骨組みのみ。**2と3を成功と読み替えない。**
 
 ## 現在地
 
-- 実装済み: 設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、foundation bootstrap。
-- 未実装: 検索・GT・Feature・学習・評価・FailureCase・疑似オンライン・ReleaseBundle。
+- 実装済み: 設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、foundation bootstrap、Golden Path 9段階の骨組み、**T1 レコード契約validator（`src/parts_search/records/`）と手書きfixture**。
+- 未実装: 検索・GT・Feature・学習・評価・FailureCase・疑似オンライン・ReleaseBundleの**実処理**（T2〜T8）。骨組みは`implemented: false`を明示する。
+- 実測（2026-09-22）: `make pipeline`で`contracts=completed` / 他7段階=`skeleton` / `simulation=blocked`（enabled=false）。未決事項は**全て仮置きで確定済み**。
+- 依存の制約: **`numpy<2` / Python`<3.13`**（x86_64 mac -> torch 2.2.2 -> numpy<2 -> Python<3.13 の連鎖）。LightGBMは`brew install libomp`が必要。
 - 実装順: [マスタータスク](docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md)のT1〜T8。
 - owner判断待ち: [未決事項](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。
 
 ## アーキテクチャ
 
-- ソースは `src/` 配下に置く。
+- ソースは `src/parts_search/` 配下に置く（import名は`parts_search`。CLI名`parts-search`と一致）。
+- **`.gitignore`のパターンはアンカーする**（`/artifacts/`）。素の`artifacts/`は同名のソースモジュールにも当たり、`src`配下のコードをgitから消した実害がある（2026-09-22）。`tests/test_tooling.py`が退行を検査する。
 - 非機密の設定は `env/config.yaml`、ローカル秘密情報は `env/secret.yaml`、チーム共有・本番クレデンシャルは Doppler (`doppler.yaml`) で管理する。
 - 設計・運用ドキュメントは `docs/` 配下。権威順位と更新規約は `docs/00_index.md` に従う。
 - パス別ルールは `.claude/rules/` 配下に置く。
@@ -74,4 +83,6 @@ Thin Harness の常時手順。詳細は `.claude/README.md` と `docs/specs/run
 
 ## Taskの開始点
 
-次の機能実装はT1 [データ契約validatorと手書きfixture](docs/tasks/02_backlog/2026-09-22-データ契約validatorと手書きfixture.md)。各taskを`03_active`へ物理移動してから着手し、依存taskとowner判断を飛ばさない。
+T1は実装済み（`docs/tasks/03_active/`にVerification付きで記録）。次はT2 [合成カタログ・Query・GTとfamily分割](docs/tasks/02_backlog/2026-09-22-合成カタログQueryGTとfamily分割.md)。各taskを`03_active`へ物理移動してから着手し、依存taskを飛ばさない。
+
+T2以降は`records`の`read_records`を必ず通す。各工程が自前で`json.load`すると、schema_version検査が抜けた経路が1本できる。

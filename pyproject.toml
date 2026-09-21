@@ -7,8 +7,26 @@ name = "parts-search-quality-loop"
 version = "0.1.0"
 description = "Reproducible foundation for a parts search quality improvement loop"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = ["PyYAML>=6.0.2,<7", "jsonschema>=4.23,<5"]
+# 上限 3.13 未満は numpy<2 から強制される（numpy 1.26 の wheel は cp312 まで）。
+# numpy<2 は x86_64 macOS の torch 2.2.2 から強制される。制約は連鎖している:
+#   x86_64 mac -> torch<=2.2.2 -> numpy<2 -> Python<3.13
+# 実測: requires-python=">=3.11" のままだと qdrant-client が Python 3.14 で
+# numpy>=2.3 を要求して依存解決が失敗する。
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "PyYAML>=6.0.2,<7",
+  "jsonschema>=4.23,<5",
+  # numpy は 1.x に固定する。このマシンは x86_64 macOS で torch の最終 wheel が
+  # 2.2.2、それが numpy 1.x に対してビルドされているため numpy 2.x と ABI 非互換。
+  # 実測: numpy 2.4.6 + torch 2.2.2 -> RuntimeError: Numpy is not available
+  "numpy>=1.26,<2",
+  "qdrant-client>=1.19,<1.20",
+  "sentence-transformers>=3.0,<3.1",
+  "torch>=2.2,<2.3",
+  "transformers>=4.44,<4.45",
+  "lightgbm>=4.5,<4.7",
+  "ir_measures>=0.4,<0.5",
+]
 
 [project.scripts]
 parts-search = "parts_search.cli:main"
