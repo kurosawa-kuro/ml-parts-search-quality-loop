@@ -1,0 +1,11 @@
+{
+  "//": "Project-scoped MCP servers for this repo (committed, shared with the team). Personal/secret-bearing servers belong in .claude/settings.local.json or `claude mcp add`, NOT here — this file is public-release-bound. Delete this stub if the project uses no project-scoped MCP servers. See https://code.claude.com/docs for the mcpServers schema.",
+  "//example": {
+    "some-server": {
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"],
+      "env": { "EXAMPLE_ENDPOINT": "https://example.invalid" }
+    }
+  },
+  "mcpServers": {}
+}

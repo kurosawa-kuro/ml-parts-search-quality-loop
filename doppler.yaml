@@ -1,0 +1,27 @@
+setup:
+  project: <doppler-project>
+  config: dev
+
+# =========================
+# シークレット管理方針
+# =========================
+# チーム共有・本番クレデンシャル類は Doppler で集中管理する。
+# 非機密の設定値は env/config.yaml、ローカルだけの秘密情報は env/secret.yaml に置く。
+# env/secret.yaml は .gitignore で除外し、コミットしない。
+# 値は登録せず、キー名と用途だけをコメントで管理する。
+#
+# 命名規則: <CATEGORY>_<SERVICE>_[QUALIFIER…]_<TYPE>（docs/specs/仕様書.md §1）。
+# このファイルは生成されたプロジェクトの Doppler `<doppler-project>/<config>` が
+# 必要とするシークレットの「キー名」だけを文書化するテンプレート。値は書かない。
+# 実際のプロジェクトに合わせてキー名を追加・削除する。
+#
+# 例（あくまでサンプル。実態に合わせて差し替える）:
+# # AI_OPENAI_API_KEY            # LLM プロバイダ API キー
+# # DB_<SERVICE>_URL             # データベース接続文字列
+# # DB_<SERVICE>_AUTH_TOKEN      # データベース認証トークン
+# # NOTIFY_<CHANNEL>_WEBHOOK_URL # 通知先 Webhook
+
+# =========================
+# Doppler 初期化コマンド
+# =========================
+# doppler setup --project <doppler-project> --config dev --no-interactive

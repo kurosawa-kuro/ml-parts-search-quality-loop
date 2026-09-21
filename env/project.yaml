@@ -1,0 +1,9 @@
+# Project path/name source of truth.
+#
+# Edit this file after moving or renaming the project, then run:
+#   make render-project-config
+
+projectName: parts-search-quality-loop
+repoRoot: /Users/kurosawa/Dev/parts-search-quality-loop
+workspaceRoot: /Users/kurosawa/Dev
+homeDir: /Users/kurosawa

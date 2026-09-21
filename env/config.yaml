@@ -1,0 +1,20 @@
+# ===========================================
+# プロジェクト固有設定
+# 環境変数で個別にオーバーライド可能
+# ローカル秘密情報は env/secret.yaml、共有・本番クレデンシャルは Doppler で管理 (doppler.yaml)
+# ===========================================
+
+# --- アプリケーション ---
+projectName: <your-project>
+appEnv: local
+port: 8080
+logLevel: info
+
+# --- サーバー ---
+server:
+  timeout: 60
+  corsAllowAll: true
+
+# --- 機能フラグ ---
+# authEnabled: false
+# rateLimitPerMinute: 1000
