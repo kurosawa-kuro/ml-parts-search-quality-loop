@@ -82,3 +82,6 @@ terraform.tfstate.*
 *.sqlite3
 *.sqlite3-*
 uploads/
+
+# Local checkouts of upstream reference repositories
+/references/github/

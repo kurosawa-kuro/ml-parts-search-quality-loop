@@ -93,3 +93,9 @@
 
 次に着手できる作業は
 [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) で管理する。
+
+## 検索品質PoC
+
+- [未決事項と採否判断](02_backlog/20260921-search-quality-poc-decisions.md)
+- [Golden Pathの段階的実装](02_backlog/20260921-search-quality-poc-implementation.md)
+- [仕様・設計整理の作業記録](05_done/20260921-distill-search-quality-spec.md)

@@ -37,6 +37,11 @@
 | [08_release_runbook.md](./08_release_runbook.md) | リリース・マイグレーション・復旧 |
 | [tasks/README.md](./tasks/README.md) | 日次運用の実行ハブ、作業計画、実装タスク |
 
+## PoC設計の素材
+
+- [設計メモ](./検索品質-継続改善ループ-PoC設計メモ.md): 整理済み仕様・設計と保存素材の入口。
+- `archive/`: 元メモ・添付全文を保存する参考素材。権威順位は最下位。
+
 ## ハーネス（AI 制御）
 
 AI エージェント制御の全体像は `.claude/README.md`。アーキ本体とその repo 固有 instantiation は `docs/specs/` に置く。
