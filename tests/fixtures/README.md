@@ -13,3 +13,6 @@ metrics_expected.json  07 の手計算値。T4 の指標実装がこれに一致
 
 `invalid/` のファイル名は「何を破っているか」を表す。ファイルを増やすときも
 1 ファイル 1 違反に保つ（複数混ぜると、どの検査が効いたのか分からなくなる）。
+
+T2の独立GT例（0〜4・欠損・矛盾・単位・必須違反）は`tests/test_synthetic.py`に手書き。
+`valid/splits.json`は4 familyを各splitへ1件ずつ割り当てた独立例。

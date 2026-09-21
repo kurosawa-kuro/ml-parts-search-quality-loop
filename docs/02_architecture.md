@@ -1,6 +1,6 @@
 # 02 アーキテクチャ
 
-> 設計契約v1。ローカル参照実装を確認して改訂。設定・成果物保存・foundation CLIは実装済み。検索・学習・評価のパス・インターフェースは予定。観測事実・固定commit・採否理由は [参照実装レビュー](./reference-implementation-review.md)。
+> 設計契約v1。ローカル参照実装を確認して改訂。設定・成果物保存・foundation CLI、T1データ契約、T2 Catalog/Query/GT生成は実装済み。検索・学習・評価のパス・インターフェースは予定。観測事実・固定commit・採否理由は [参照実装レビュー](./reference-implementation-review.md)。
 
 ## 概要と実行モデル
 
@@ -32,8 +32,8 @@ Retrieval → CandidateSet → Feature Generation → Ranker → SearchRun
 
 | 構成要素 | 入力 → 出力 / 責務 | 予定パス |
 |---|---|---|
-| Catalog | 生成設定 → CatalogSnapshot・QuerySet・SplitManifest。GT用の潜在正解情報を検索入力へ露出しない | `src/parts_search/catalog/` |
-| Judgments | 属性・明示条件・判定根拠 → GroundTruthSnapshot。未判定・不適合を分離 | `src/parts_search/judgments/` |
+| Catalog | 生成設定 → CatalogSnapshot・QuerySet・SplitManifest。GT用の潜在正解情報を検索入力へ露出しない | `src/parts_search/pipelines/synthetic.py`（実装済み） |
+| Judgments | 属性・明示条件・判定根拠 → GroundTruthSnapshot。未判定・不適合を分離 | `src/parts_search/pipelines/judgments.py`（実装済み） |
 | Retrieval | catalog/index + Query + SearchConfiguration → CandidateSet・QueryOutcome | `src/parts_search/retrieval/` |
 | Features | query-product・取得score・時点属性 → FeatureDataset。学習/推論で共通生成 | `src/parts_search/features/` |
 | Ranker | FeatureDataset + train labels → ModelBundle、候補 + ModelBundle → SearchRun | `src/parts_search/ranker/` |
@@ -50,7 +50,7 @@ Retrieval → CandidateSet → Feature Generation → Ranker → SearchRun
 
 ## 実装済みの土台
 
-Pythonのsrc packageを`src/parts_search/`に置く。`config/`は厳密なYAMLと工程別設定検査、`artifacts/store.py`はrunの原子的保存とchecksum検証、`pipelines/bootstrap.py`は公開設定snapshotからrunを作る。`cli.py`がconfig-check / bootstrap / verify-artifactを公開する。
+Pythonのsrc packageを`src/parts_search/`に置く。`config/`は厳密なYAMLと工程別設定検査、`runstore.py`はrunの原子的保存とchecksum検証、`pipelines/bootstrap.py`は公開設定snapshotからrunを作る。`cli.py`がconfig-check / bootstrap / verify-artifact / stages / stage / pipelineを公開する。T2はcatalog成果物をjudgmentsへ明示的に渡し、全直積のGTをストリーム生成する。
 
 bootstrapはML工程と独立し、quality gateの未設定を成功に変換しない。成果物には`kind=foundation_bootstrap`と`ml_executed=false`を記録する。モデルmanifestや検索成果物schemaは後続実装とする。
 

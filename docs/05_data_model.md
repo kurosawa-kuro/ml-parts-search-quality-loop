@@ -1,6 +1,6 @@
 # 05 データモデル
 
-> 設計契約v1。設定schemaとfoundation runの保存・検証を実装済み。検索・GT・モデル等のレコードvalidatorと各工程CLIは未実装。根拠は [参照レビュー](./reference-implementation-review.md)。
+> 設計契約v1。設定schema、foundation保存・検証、T1レコードvalidator、T2合成Catalog/Query/GTとfamily分割を実装済み。検索・学習・指標以降は未実装。根拠は [参照レビュー](./reference-implementation-review.md)。
 
 ## 保存方式と識別
 
@@ -42,7 +42,7 @@ artifacts/
 | FailureCase | failure_id、query_id、run_id、evidence_ids、category、説明、次のexperiment_id（着手時） |
 | PromotionDecision | decision_id、baseline/candidate run、policy_id、比較値・分母・gate結果、decision、理由、release_id（採用時） |
 
-数値属性は値とunitを分離し、寸法はmm等のカテゴリ別正規単位に揃える。元値も保存する。unknownはnullであり0と異なる。具体的なカテゴリ別必須属性・許容差は商材選定後に定義する。
+数値属性は値とunitを分離し、寸法はmm等のカテゴリ別正規単位に揃える。元値も保存する。unknownはnullであり0と異なる。PoCの具体的な属性・許容差は末尾のT2契約を参照。
 
 ## GT policy v1
 
@@ -104,7 +104,7 @@ TREC qrelsは `query_id 0 product_id relevance`、runは `query_id Q0 product_id
 
 `env/project.yaml`はprojectNameと実repoRootの正本。`env/config.yaml`内の相対パスはrepoRoot基準とする。projectNameは論理名`parts-search-quality-loop`を保持し、ディレクトリ名`ml-parts-search-quality-loop`と区別する。
 
-初期値はFA部品・JA/EN・10,000 SKU・1,000 QueryFamily、family分割はtrain/tuning/holdout/production = 60/15/15/10%。Qdrantはlocalhost:6333。これらはローカルPoCの初期選択で、実験開始時にsnapshotへ固定する。カテゴリ属性規約・Embedding model/revision・Feature schemaは未確定。
+初期値はFA部品・JA/EN・10,000 SKU・1,000 QueryFamily、family分割はtrain/tuning/holdout/production = 60/15/15/10%。Qdrantはlocalhost:6333。これらはローカルPoCの初期選択で、実験開始時にsnapshotへ固定する。カテゴリ属性規約は末尾のT2契約、Embedding等の仮置き値はenv/config.yamlを参照。
 
 設定loaderは実装済み。project/configのprojectName一致、未知キー拒否、工程ごとの必須null検査、secret参照キーの検証を行う。接続adapterは未実装で、実値の使用・環境変数からの注入は後続対応とする。secret全体をconfigへmergeせず、認証情報は接続adapterにだけ渡す。秘密情報を除いた有効設定をmanifestへ保存する。環境変数overrideは現在未提供。
 
@@ -117,3 +117,57 @@ qualityGateのnullは採用判定不可、simulation.enabled=falseはsimulation�
 bootstrapのmanifestはschema_version、run_id、created_at、status、outputs（ファイル名→sha256）、metadataを持つ。metadataにはfoundation種別・code revision・dirty状態・ソース/lock checksum・Python/依存versionを記録する。出力は公開config.jsonとreadiness.json。secretは自動読込しない。
 
 同一run_idのwriter予約と一時ディレクトリからのrenameで公開し、既存runは置換しない。通常例外は一時出力を片付ける。強制終了後に残った隠しlock/stagingは自動削除せず、writerが終了したことを確認して個別復旧する。検証は出力inventoryとchecksumを照合するもので、署名・改ざん防止機構ではない。未コミットコードのpatch保存・完全な再実行復元・モデルbundleは後続対応。
+
+## T2 合成入力と完全判定GT（実装）
+
+`fa_parts_attr_v1` は実商品の適合規約ではなくPoC用の仮置き。軸（shaft）、軸受
+（bearing）、ボルト（bolt）をほぼ均等に生成する。全カテゴリで diameter / length、
+material / standard / usage を持つ。寸法はmmへ正規化し、`original: {value, unit}`に
+元値を残す。mm/cm/m/inに対応、1 in=25.4 mm。点指定の一致許容差は0.01 mm
+（浮動小数比較の補助許容差1e-9 mm）。材質・規格・用途は文字列の完全一致。
+`SYN-<CATEGORY>-V1`は架空規格である。
+
+`constraints`は`required`/`optional`の辞書。寸法は`{value, unit}`または閉区間
+`{min, max, unit}`で表す。区間指定には点指定の0.01mmを追加しない。
+型番・カテゴリ・材質・規格・用途は文字列。未知の条件名や単位は拒否し、黙って無視しない。
+必要な条件値または商品属性がnull/欠落ならunrateable。逆転区間や、必須カテゴリと
+Queryカテゴリの矛盾もunrateable。欠損・矛盾を判定した後、必須違反を型番一致より
+先に判定する。任意条件の不一致だけでは0へ落とさない。意味的関連の仮置きは
+「同一カテゴリ」であり、別カテゴリの代替は認めない。
+
+QueryFamilyは寸法組が一意な商品から重複なしで意図を選ぶ。SKU数よりfamily数が
+多い設定は拒否する。familyをsplit.seedでshuffleし、最大剰余法で比率の端数を配分
+（同率はsplit名昇順）。翻訳・表層変形より先に割当を確定する。
+queries.generationSeedで意図を選び、split.generationSeedsで単位表記・文章の表層を
+変える。1 familyに1 query typeを設定順に循環割当し、各設定言語につき1 Queryを作る。
+自然文は構造化条件と一緒に生成するテンプレート文で、任意の自然文を解析する機能はない。
+型番Queryは型番を希望条件、型番/寸法Queryは寸法を必須、自然文Queryは寸法を希望とする。
+全Queryに必須規格と希望材質・用途を持つ。条件はすべて検索文にも表示する。
+
+family→split対応は全familyをちょうど一度含む辞書。許可split、件数、集合digest、
+Queryのfamily網羅、同family内の翻訳条件一致を検査する。単位正規化後に同じ条件を
+持つ別familyも拒否し、query typeや言語だけ変えた同一意図の分割漏洩を防ぐ。
+GT ID、rule ID、生成元商品ID、labelはQuery/商品入力へ保存しない。
+
+`stage catalog`はcatalog.jsonl / queries.jsonl / splits.jsonを公開する。
+manifest.metadataに生成設定（全seedを含む）、属性policy、件数、集合digest、
+内容に基づくdataset_id / queryset_id / split_idを持つ。run_idは公開ごとに新規で、
+同一設定なら行ID・split・内容ID・出力checksumは一致する。
+
+`stage judgments --dataset <artifact>`は既存datasetのmanifest版・checksum・入力契約を
+検査し、CatalogとQueryを`read_records`で読み直す。全直積をquery_id/product_id順に
+書き出す。gt_idは入力内容とpolicyから決定し、GT manifestには入力のrun_id、内容ID、
+manifest/output checksumを残す。判定不能もrelevance=nullの行として保持する。
+summary.jsonにexpected_rows / rows / judged / unrateable / complete_queries /
+no_relevant_queries / relevance_countsを持ち、判定不能が残る場合のstatusはinconclusive。
+段階のcompletedは生成完了であり、正式評価の合格を意味しない。
+
+既定規模は10,000 SKU・1,000 family・2,000 Query、GTは2,000万行。
+GTはquery単位のバッファで検査・書出し、全GTのlist/bytesを保持しない。
+storeのSHA-256生成と公開前checksum照合もストリーム処理。一時出力中に例外が起きた
+runは公開せず、既存runを置換しない。GT読込は`records.io.iter_judgments(artifact)`を使い、
+版/checksum、行契約、batchを跨ぐID順序・一意性、最終行数を検査する。最後まで消費して
+検証を完了する。通常`read_records`の256 MiB上限は保持する。
+
+未コミットソースの記録は既存foundationと同じrevision・dirty・source/lock checksumまで。
+patchの自動保存・完全なコード復元は未実装であり、再現実行には同じソースとlockを保持する。

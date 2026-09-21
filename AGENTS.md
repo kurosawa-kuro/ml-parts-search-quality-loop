@@ -8,8 +8,8 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 
 - 目的: 多言語部品検索の継続改善ループを再現するPoC
 - 主要技術: Python 3.11+ / uv / PyYAML / jsonschema。検索・学習本体は後続実装。
-- 現在地: foundation、Golden Path の骨組み、T1 の14レコード契約validatorと一部の手書きfixtureを実装済み。contracts のみ実処理。2026-09-22 の再検証は85 passed / 2 deselected、lint/build成功。ML工程は未実装。
-- 実装順: `docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md`のT1〜T8。次はT2の合成カタログ・Query・GTとfamily分割。T1の証跡・残りは `docs/tasks/03_active/2026-09-22-データ契約validatorと手書きfixture.md`。
+- 現在地: foundation、Golden Path の骨組み、T1 の14レコード契約validatorと一部の手書きfixtureを実装済み。T2の合成Catalog/Query/GT・family分割・ストリーム処理も実装済み。contracts/catalog/judgmentsが実処理。検索・学習・評価以降は未実装。
+- 実装順: `docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md`のT1〜T8。次はT3のVector Baseline検索とSearchRun。T1の証跡・残りは `docs/tasks/03_active/2026-09-22-データ契約validatorと手書きfixture.md`。
 
 ## セットアップ / 主要コマンド
 
@@ -56,4 +56,4 @@ make build    # wheel / sdist
 - Claude Code で繰り返し使う作業手順は `.claude/skills/` に置く（classify-task → create-task → scan-decisions → plan-skeleton → execute-task → verify-completion → review-task のライフサイクル）。
 - Codex repo skills を本格運用する場合は `.agents/skills/` を任意追加する。標準生成物には含めない。
 - task note を仕様の正本にしない。確定した仕様は `docs/specs/`、判断理由は `docs/adr/`、運用手順は `docs/runbooks/` に昇格する。
-- 現在のbacklogはT1〜T8に分割済み。依存順を守る。`docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md` の2026-09-22の判断により設定値は仮置き済みで、商材policyの内容はT2で具体化する。実測後に調整する前提を保持し、古い未決記述だけで作業を止めない。
+- 現在のbacklogはT1〜T8に分割済み。依存順を守る。`docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md` の2026-09-22の判断により設定値は仮置き済みで、商材policyの内容はT2で具体化済み（docs/05_data_model.md）。実測後に調整する前提を保持し、古い未決記述だけで作業を止めない。

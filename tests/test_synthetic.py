@@ -354,3 +354,37 @@ def test_streaming_reader_rejects_truncation_and_wrong_gt(settings):
         )
         with pytest.raises(FoundationError):
             list(iter_judgments(path, batch_size=1))
+
+
+def test_complete_all_zero_query_is_no_relevant_not_unrateable(settings):
+    outputs, metadata = build_dataset(settings.config)
+    for q in outputs["queries.jsonl"][:2]:
+        q["constraints"]["required"]["standard"] = "SYN-NO-MATCH"
+    metadata["set_digests"]["queryset"] = digest(outputs["queries.jsonl"])
+    metadata["queryset_id"] = "queryset-" + metadata["set_digests"]["queryset"][:24]
+    metadata["dataset_id"] = "dataset-" + digest(metadata["set_digests"])[:24]
+    dataset = publish_run(
+        settings.artifacts_root / "datasets",
+        "no-relevant",
+        outputs,
+        {**metadata, "stage": "catalog", "implemented": True},
+    )
+    artifact = Path(run_stage(settings, "judgments", dataset=dataset)["artifact"])
+    summary = read_json(artifact / "summary.json")
+    assert summary["status"] == "complete"
+    assert summary["no_relevant_queries"] == 2
+    assert summary["unrateable"] == 0
+    assert summary["judged"] == 1200
+
+
+def test_publishing_the_same_id_never_overwrites_or_consumes_stream(tmp_path):
+    original = publish_run(tmp_path, "same", {"rows.jsonl": [{"original": True}]}, {})
+    checksum_before = file_checksum(original / "rows.jsonl")
+
+    def unexpected():
+        pytest.fail("writer must reserve ID before consuming stream")
+        yield {}
+
+    with pytest.raises(FoundationError, match="already exists"):
+        publish_run(tmp_path, "same", {"rows.jsonl": unexpected()}, {})
+    assert file_checksum(original / "rows.jsonl") == checksum_before
