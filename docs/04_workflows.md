@@ -1,48 +1,49 @@
 # 04 ワークフロー
 
-## セットアップ
+> 設計契約v1。プロダクト実装・実行CLIは未提供。以下の処理名は手順上の名前であり、実行可能なコマンドではない。
 
-```bash
-make help
-make setup
-```
-
-## 作業開始
+## 現在実行できる確認
 
 ```bash
 git status --short
-```
-
-1. [tasks/README.md](./tasks/README.md) を見る。
-2. `docs/tasks/03_active/` から今日の task を選ぶ。
-3. task に Scope / Plan / Acceptance Criteria があることを確認する。
-4. 中規模以上なら Skeleton を固定してから実装する。
-
-## ローカル実行
-
-```bash
-make run
-```
-
-または:
-
-```bash
-make dev
-```
-
-## テスト
-
-```bash
 make test
-```
-
-## 作業終了
-
-```bash
+make fmt
 git diff --check
-git status --short
 ```
 
-- 実行した検証を task の `Verification` に残す。
-- 未解決事項は task の `Notes` または `backlog/` に移す。
-- 確定した仕様・手順・判断は docs 本体、runbook、ADR へ昇格する。
+現行の`make test` / `make fmt`はTODOを表示するだけで、成功終了はテスト・整形の実施を意味しない。`make setup` / `make run` / `make dev`もテンプレート。`make help` targetは存在しない。アプリのセットアップ手順は依存・CLI実装時にここへ追加する。
+
+## 作業開始と終了
+
+1. [タスク一覧](./tasks/README.md)から対象を選び、Scope・Plan・受入条件を記録する。
+2. [未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md)のうち、その工程に必要な設定を決める。
+3. 変更した契約の正本（01〜08）を更新し、対応するvalidator・テストを実装する。
+4. 実行コマンド、結果、未検証範囲をtaskへ記録する。設計文書の検証とアプリ動作確認を区別する。
+
+## 初回Baseline（実装予定手順）
+
+| 順 | 操作 | 入力 / 生成物 | 完了条件 |
+|---|---|---|---|
+| 1 | prepare | 生成設定 → catalog・queries・split・GT snapshot | ID・family分離・判定完了を検証 |
+| 2 | freeze | snapshot + MetricPolicy + baseline設定 → Experiment | 入力checksumと実行環境を固定 |
+| 3 | index / retrieve | catalog + QuerySet → index・CandidateSet・outcomes | QuerySet全件にoutcomeがある |
+| 4 | rank | 候補 → SearchRun（Baselineは取得順位） | 一意で連続した順位、0件と失敗を区別 |
+| 5 | evaluate | SearchRun + CandidateSet + GT → metrics・per-query・Slices | 05の分母・coverage・policyを満たす |
+| 6 | simulate / analyze | development集合 → events・KPI・FailureCases | 失敗例に実際の結果・根拠が結合される |
+
+## 改善と独立評価（実装予定手順）
+
+1. developmentのFailureCaseから変更仮説を1つ作る。GT更新、Retrieval変更、Feature変更のどれかを記録する。
+2. 新GTを作る場合は旧版を保持する。未判定・暗黙feedbackを評価用GTに黙って混ぜない。
+3. trainだけで学習し、tuningで設定を選ぶ。Feature順序とmodel manifestを検証する。
+4. 新Experimentで候補を実行する。rerankだけの比較ならbaselineと同じCandidateSetを使う。
+5. 両構成を同じGT / MetricPolicyで再評価する。検索結果を再利用できる条件は05に従う。
+6. 凍結したholdoutとproduction集合で評価する。採否を [07](./07_test_strategy.md) のゲートに従って記録する。
+7. acceptedのみ [08](./08_release_runbook.md) のstaging・smoke・切替へ進む。inconclusiveは原因を残して保留する。
+8. 次の失敗から新Experimentへ接続する。独立評価集合を改善へ使う際は開発集合へ移し、次の独立集合を新設する。
+
+## 再試行・再現
+
+失敗は [06](./06_error_policy.md) で分類する。永続成果物は上書きせず、新run_idとretry_ofを使う。再現はmanifestから同じ入力・設定・依存を復元する。seed一致だけでなく出力ID・順位・metricの許容差を [07](./07_test_strategy.md) で検証する。
+
+関連: [05 データ契約](./05_data_model.md) / [実装backlog](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。実コマンドの導入時はこの表とテスト・smokeを同じtaskで更新する。

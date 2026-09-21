@@ -1,208 +1,106 @@
 # 02 アーキテクチャ
 
-> 最終更新: 2026-09-21。[要件](./01_requirements.md) を実現する設計方針の正本。以下のプロダクト構成・パスは実装予定であり、実装済みではない。選定前の技術と追加提案は明記する。
+> 設計契約v1。ローカル参照実装を確認して改訂。アプリは未実装であり、以下のパス・インターフェースは予定。観測事実・固定commit・採否理由は [参照実装レビュー](./reference-implementation-review.md)。
 
-## 概要
+## 概要と実行モデル
 
-ローカルで再現可能な改善ループを構築する。候補取得と再ランキング、GT更新と評価を分離し、Experimentを軸に入力・処理・結果を関連づける。
+ローカルのバッチ処理を成果物境界で接続する。検索・学習・評価を独立に再実行できる形とし、PoC段階では常駐API、外部Feature Store、分散queueを必須にしない。
 
 ```text
-Product Master → Embedding / Index → Candidate Retrieval
-                                           ↓
-                                    Feature Generation
-                                           ↓
-                                    LightGBM LambdaRank
-                                           ↓
-                                      SearchRun
-                                           ↓
-QuerySet + GroundTruth ───────────→ EvaluationRun
-                                           ↓
-                                     Metrics / Slices
-                                           ↓
-                                      FailureCase
-                                           ↓
-                        GT更新 / Retrieval・Feature改善 / 再学習
-                                           ↓
-                            Holdout → Production-like validation
-                                           ↓
-                                採否記録 → Online simulation
-                                              ↓
-                                Events → FailureCase → 次のExperiment
+Catalog + QuerySet + SplitManifest + GT snapshot
+                      ↓
+                  Experiment
+                      ↓
+Retrieval → CandidateSet → Feature Generation → Ranker → SearchRun
+                  │                                 │
+                  └────────── Evaluation ← GT + MetricPolicy
+                                      ↓
+                               Metrics / Slices / FailureCase
+                                      ↓
+                      GT更新・Feature改善・Train → 新Experiment
+                                      ↓
+                       Holdout + Production-like validation
+                                      ↓
+                     PromotionDecision → ReleaseBundle → simulation
+                                                               ↓
+                                                    Events → FailureCase
 ```
 
-PoCのDeployは疑似オンライン実験で使う構成・モデルの切り替えとして扱う。実サービスへの配備は範囲外。
+正本の分担: [01](./01_requirements.md)は要求、[03](./03_domain_model.md)は概念・状態、[05](./05_data_model.md)はデータ・GT・指標契約、[04](./04_workflows.md)は手順、[06](./06_error_policy.md)は異常、[07](./07_test_strategy.md)は検証、[08](./08_release_runbook.md)は疑似オンライン切替。
 
-## 構成要素と責務
+## 構成要素と境界
 
-プロダクトコードは `src/` 配下に置く。下記は責務の分割案であり、個別APIやファイル形式は実装タスクで具体化する。
-
-| 構成要素 | 役割 | 担当パス（プロダクト部分は予定） |
+| 構成要素 | 入力 → 出力 / 責務 | 予定パス |
 |---|---|---|
-| Catalog / Query生成 | 商品属性、多言語テキスト、クエリと分割データの生成 | `src/catalog/` |
-| Retrieval | Embedding、Index、候補取得と検索スコアの出力 | `src/retrieval/` |
-| Features | query-productの構造化一致と検索スコアを特徴量化 | `src/features/` |
-| Ranker | 学習データからモデルを作り候補を再ランキング | `src/ranker/` |
-| Judgments | GTの生成・更新・版管理、判定根拠の保持 | `src/judgments/` |
-| Evaluation | SearchRunとGTから指標・Sliceを生成 | `src/evaluation/` |
-| Failure analysis | 評価・イベントから失敗クエリと原因候補を抽出 | `src/failure_analysis/` |
-| Feedback loop | イベント生成・集約、改善実験への接続 | `src/feedback_loop/` |
-| Experiment | 設定・入力版・モデル・実行結果を関連づける | 保存場所・実行インターフェースは未決 |
-| エージェントガイド | Codex / 他エージェント向けrepoガイド | `AGENTS.md` |
-| Claudeガイド | Claude Codeの司令ルール | `CLAUDE.md` |
-| タスク文書 | 一回性の作業計画・実装タスク | `docs/tasks/` |
-| Claude skills | Claude Code用の繰り返し手順 | `.claude/skills/` |
+| Catalog | 生成設定 → CatalogSnapshot・QuerySet・SplitManifest。GT用の潜在正解情報を検索入力へ露出しない | `src/catalog/` |
+| Judgments | 属性・明示条件・判定根拠 → GroundTruthSnapshot。未判定・不適合を分離 | `src/judgments/` |
+| Retrieval | catalog/index + Query + SearchConfiguration → CandidateSet・QueryOutcome | `src/retrieval/` |
+| Features | query-product・取得score・時点属性 → FeatureDataset。学習/推論で共通生成 | `src/features/` |
+| Ranker | FeatureDataset + train labels → ModelBundle、候補 + ModelBundle → SearchRun | `src/ranker/` |
+| Evaluation | CandidateSet / SearchRun + GT + MetricPolicy → EvaluationRun。検索engineを呼ばない | `src/evaluation/` |
+| Failure analysis | query別評価・Slice・event → FailureCase。原因分類と証拠を保持 | `src/failure_analysis/` |
+| Feedback loop | 固定simulation条件 + SearchRun → Events・暗黙判定候補。評価GTを直接更新しない | `src/feedback_loop/` |
+| Experiments | 設定凍結、run実行・入力照合、成果物公開、比較・採否 | `src/experiments/` |
+| Artifacts | manifest・checksum・JSON/JSONL・TREC adapter、版互換検査 | `src/artifacts/` |
+| エージェントガイド | Codex / 他エージェント共通方針 | `AGENTS.md` |
+| Claudeガイド / skills | Claude Codeの指示と繰り返し手順 | `CLAUDE.md` / `.claude/skills/` |
+| タスク文書 | 作業計画・証跡・残件 | `docs/tasks/` |
 
-## データとGTの境界
+各処理はmanifest参照で入力を受け、成功成果物の参照を返す。run中の一時出力を後続へ渡さない。学習・評価が必要とするGTは明示引数とし、Retrieval / 推論には渡さない。
 
-### 商品・クエリ
+## Retrievalと再ランキング
 
-商品は識別情報（`product_id`, `category`, `manufacturer`, `model_number`）、多言語テキスト、構造化スペック、商用属性に分ける。
+初期比較は `vector_only` と `vector_ltr_v1`。構造化条件のみの効果を調べる `vector_structured` をablationとして追加する。BM25 / Hybrid / RRFは次段階候補。初期Vector DBはQdrantローカル。pgvector / FAISSは代替候補。Embeddingモデルは未決、構造化filterは初期無効とし、boost方式はablation実装時に決める。
 
-- テキスト例: `title_ja`, `title_en`, `description_ja`, `description_en`。
-- スペック例: `diameter`, `length`, `material`, `thread_size`, `voltage`, `pressure`, `precision_grade`。
-- 商用属性例: `price`, `stock`, `popularity`。
-- クエリ例: `6204 ベアリング`、`M6 30mm SUS ボルト`、`24V proximity sensor`。
+- 候補取得は100件以上を要求できる契約とし、取得件数・filter条件・返却件数を保存する。catalogが小さい場合等の実件数も残す。
+- `source_score`と`score_type`を保持する。dense cosine、BM25、RRF、モデルscoreは同じ尺度ではない。RRFの結果をsemantic_scoreへ入れない。
+- Hybridを採用する場合はdense/sparse双方のprefetch件数、fusionパラメータ、重複排除を記録する。元scoreが得られない場合は欠損として扱い、0で捏造しない。
+- 初期runは候補100件を最終順位まで保持し、上位10件だけの保存でRecall@100やMRR@100を失わないようにする。
+- rerankのみの効果測定は同一CandidateSetで比較する。Retrievalの変更は別実験で候補Recallも比較する。
+- Retrieval失敗時に別engineへ黙ってfallbackしない。fallbackを実験するなら別variantとして識別する。
 
-必要属性は商材確定後に絞る。単位・欠損・正規化、多言語間のクエリ対応とID、ファイル形式は未決であり、データ契約を実装する前に確定する。
+## Featureと学習
 
-### Ground Truth
+LightGBM LambdaRankを基本方針とする。モデル名だけで再現性を表さず、ModelBundleへFeature順序・型・欠損・変換・label_gainを固定する。推論時に互換性が一致しなければ停止する。
 
-query-productに対する段階的relevanceを0〜4で表す。元メモのルール案を以下に集約する。
+Feature候補はsemantic / BM25 score、型番・径・ねじ・材質・カテゴリ・メーカー一致、在庫、人気。後二者は時点を固定する。自動車部品なら年式・型式・位置一致を検討する。欠損フラグを保持し、Feature変更は新schema_idとする。
 
-| relevance | 判定条件案 |
-|---|---|
-| 4 | 型番完全一致 |
-| 3 | カテゴリ + 寸法完全一致 |
-| 2 | カテゴリ + 用途 + 材質一致 |
-| 1 | 意味的には近いが仕様不一致 |
-| 0 | 別カテゴリ |
+学習データはqueryごとに連続した行とgroup sizeを作り、group size合計と行数の一致を検査する。splitは行単位の乱数ではなくQueryFamily単位。正規化等のfitはtrainのみ、early stoppingや設定探索はtuningのみで行う。空学習・有効な順位差のない学習集合は失敗にする。GTにない候補を自動で負例にしない。
 
-これは初期案であり全入力を網羅していない。型番一致と必須仕様不一致の競合、同一カテゴリ内の不適合、属性欠損、複数条件成立時の優先順位は未決。`EXACT / COMPATIBLE / SUBSTITUTE / RELATED / IRRELEVANT` の名前付けは追加提案として保持し、数値ルールやESCIラベルと自動的に同一視しない。
+合成GTのルールをFeatureとして直接出力すると答えの再現になるため、通常の商品・クエリ情報から得られる一致特徴量だけを使う。GT rule_id・relevance・future conversion等は推論入力から排除する。合成ルール由来の限界は評価報告に明記する。
 
-GTと検索特徴量は別の責務に置く。イベント由来の暗黙的な判定とルール生成GTを区別し、どの根拠からGTを更新したか追跡する。クリック等をGTへ反映する重み・判定ルールは今後定義する。
+## 実験・評価・Feedback
 
-## Retrieval / Feature / Ranker
+Experimentは入力snapshotと複数variantを固定する。Runは実行試行、EvaluationRunは評価の試行であり、同じ検索結果を新GTで再評価しても元結果を変更しない。
 
-基本経路はVector検索 → 特徴量生成 → LightGBM LambdaRankによる再ランキング。Vector DBはQdrant / pgvector / FAISSから選定する。ローカル実行を想定し、特定エンジンへの依存はRetrieval内に閉じる。
+評価はQuerySetの全IDを起点にし、各queryのoutcomeを確認する。GTやrunに存在する行だけを平均して欠落を隠さない。metric policy、比較signature、coverageの規約は05を参照する。
 
-| 比較構成 | 位置づけ |
-|---|---|
-| `vector_only` | 意味的類似のみのBaseline |
-| `vector_structured` | 構造化条件を加えた比較候補。filter / boostの方式は未決 |
-| `vector_ltr_v1` / `vector_ltr_v2` | 特徴量と学習モデルの改善比較 |
-| BM25 / Hybrid / RRF | 添付からの拡張候補。PoC必須構成への採否は未決 |
+Feedbackはdevelopment simulationで改善材料を集める。最後のproduction分布検証は凍結した別familyとsimulation policyで実行する。その結果から改善を行う場合、当該検証集合を開発側へ移し、独立な最終集合を更新する。実オンライン効果や位置バイアス補正済み効果を主張しない。
 
-特徴量候補は `semantic_score`, `bm25_score`（BM25採用時）、`model_number_exact_match`, `diameter_exact_match`, `thread_exact_match`, `material_match`, `category_match`, `manufacturer_match`, `stock`, `popularity`。自動車部品を選ぶ場合は年式・型式・位置の一致を検討する。
+## Golden Pathとの対応
 
-Feature定義 → Feature生成 → 学習データ → モデル → 再ランキングを分ける。候補取得の漏れはRecall、候補内の並びの問題はランキング指標・失敗例で切り分ける。Cross Encoder、外部LTRプラグイン、独立したFeature Storeの採用は必須にしない。
-
-## Experimentと評価成果物
-
-添付の提案を設計方針として取り込み、Experimentを第一級の管理単位とする。実行API・保存形式・ID体系は未決。
-
-| 概念 | 責務・関連 |
-|---|---|
-| QuerySet | クエリ集合とSlice属性を識別する |
-| GroundTruth | query-productの判定とその版・根拠を識別する |
-| Experiment | Retrieval設定、Feature構成、Ranker版、GT版、データ分割・seedを束ねる |
-| SearchRun | Experimentで得た順位付き検索結果を保持する |
-| EvaluationRun | SearchRunとGTに対するMetrics / Slicesを保持する |
-| FailureCase | 元Query・結果・評価またはイベントと失敗原因を関連づける |
-
-```text
-Experiment → SearchRun → EvaluationRun → Metrics / Slices
-                                               ↓
-                                          FailureCases
-                                               ↓
-                                        Next Experiment
-```
-
-例示設定（採用技術・版を確定するものではない）:
-
-```yaml
-experiment_id: exp_20260921_001
-retrieval:
-  dense: bge-m3
-  sparse: bm25
-  fusion: rrf
-features:
-  model_number_exact_match: true
-  diameter_exact_match: true
-  material_match: true
-ranker:
-  type: lightgbm_lambdarank
-  version: v3
-ground_truth:
-  version: gt_20260921
-dataset:
-  train_seed: 42
-  holdout_seed: 137
-  production_seed: 999
-```
-
-この例に加え、実装時には実際のデータ版・分割対象を特定できる契約を定義する。版とseedだけで再現性を保証したとは扱わない。
-
-## Feedbackと独立検証
-
-イベント候補は `search_impression`, `search_click`, `conversion`, `reformulation`, `zero_result`。検索結果とinteractionを関連づけ、失敗抽出・GT更新・学習データ生成へつなぐ。イベントの識別子・時刻・検索実行との結合方法、欠落・重複時の扱いは実装前の未決事項とする。
-
-```text
-ranking / interaction events
-  → 集約・判定候補
-  → GT更新 / feature dataset
-  → train → model → rerank
-```
-
-Training / tuning、Holdout、Production-like simulationを分離し、seedも変更する。分割単位と同一商品の派生・翻訳クエリ等の重複防止方法は未決。seed変更だけを漏洩防止の証拠にしない。Holdoutを繰り返し改善に利用する場合の更新方針も決める。
-
-Baselineと改善候補の比較では、評価QuerySet・GT・データ条件を揃える。GT自体を更新した際の旧実験の再評価方法、採用基準・許容回帰はbacklogで決定する。判定条件が未確定の間は、自動採用・品質合格を行わず結果の比較までとする。
-
-## Golden Pathとアーキテクチャ
-
-| 要件のステップ | 通る構成要素 | 通る境界 / データ | 停止要因 |
+| 要件のステップ | 主な境界 | 完了成果物 | 停止条件 |
 |---|---|---|---|
-| 1. 準備 | Catalog / Judgments / Experiment | Product Master / QuerySet / GT / 分割設定 | 入力・版・分割を特定できない |
-| 2. Baseline評価 | Retrieval / Evaluation | SearchRun → EvaluationRun | Index欠落、結果とGTの対応不整合 |
-| 3. 失敗抽出 | Feedback loop / Failure analysis | Events・Slices → FailureCase | イベントと検索結果を関連づけられない |
-| 4. 更新・再学習 | Judgments / Features / Ranker | GT・Feature dataset → model | 学習入力・Feature定義の不整合 |
-| 5. 独立比較 | Retrieval / Ranker / Evaluation | Holdout・Production-like結果 | 分割漏洩、比較条件の不一致 |
-| 6. 次の実験 | Experiment / Feedback loop | 採否・次の構成 → Events | 採否根拠や使用モデルを追跡できない |
+| 1. 準備 | Catalog / Judgments / Experiments | 入力snapshot・split・policy manifest | 未決の必須設定、GT不備、family重複 |
+| 2. Baseline評価 | Retrieval / Evaluation | candidates・results・outcomes・metrics | 欠落query、依存欠落、schema不整合 |
+| 3. 失敗抽出 | Feedback / Failure analysis | Events・FailureCase | 未結合event、根拠のない分類 |
+| 4. 更新・学習 | Judgments / Features / Ranker | 新GT・FeatureDataset・ModelBundle | group不整合、リーク、学習不能 |
+| 5. 独立比較 | Experiments / Evaluation | Holdout / production比較・採否 | signature不一致、不完全評価 |
+| 6. 次へ戻す | Experiments / Feedback | ReleaseBundle・smoke・次の実験 | 切替後smoke失敗、旧版復旧不能 |
 
-現時点のMakefileはテンプレートであり、この経路を実行するコマンドは未実装。実装時に [ワークフロー](./04_workflows.md)、[テスト戦略](./07_test_strategy.md)、[リリース運用](./08_release_runbook.md) へ実コマンドとsmoke条件を反映する。
+## 実装順序と採用しない挙動
 
-## 成長フェーズ
+1. データ契約validatorと小さな手書きfixture、GT / split / MetricPolicyを作る。
+2. Vector-only検索と成果物評価を接続する。
+3. FeatureとLambdaRankを接続し、学習・推論の一致を検証する。
+4. development simulation、FailureCase、GT更新から再実験へ接続する。
+5. 独立検証・採否・bundle切替・rollbackまで通す。
+6. 必要に応じHybrid等を追加する。
 
-1. 商材・初期言語・GT・分割・指標契約を確定し、Catalog / QuerySet / GT生成を作る。
-2. Vector-onlyのSearchRun・EvaluationRun・Slice分析を通す。
-3. 構造化FeatureとLambdaRankを加え、失敗改善を比較する。
-4. 疑似オンラインイベント、GT更新、独立検証、採否記録を接続してループを1周する。
-5. 必要に応じてBM25 / Hybrid / RRF、判定補助、構成探索を追加する。
+参照コードの「評価依存がなければ0を返す」「小データでtrain/testを重複させる」「未実行queryが平均から消える」「他タスクの漏洩情報をFeatureに使う」は採用しない。KDD CupのLightGBMは確率統合・期待gain順の参考であり、LambdaRank実装の直接根拠ではない。
 
-## OSSの参照方針
+## 運用境界と関連タスク
 
-単一リポを模倣せず、主に6系統の責務境界を参考にする。以下は添付から抽出した**調査観点**であり、各リポの現況・機能は今回検証していない。依存の導入やコード流用を決定したものではない。
+設定・秘密情報・保存先は05に従う。PoCのDeployはローカルsimulationのbundle切替であり商用配備ではない。参照repoは読み取り用で、アプリのruntime依存にしない。
 
-| 参考候補 | 読み取る設計観点 | 対応先 |
-|---|---|---|
-| [Metarank](https://github.com/metarank/metarank) | イベントから判定・学習・rerankへ戻す境界 | Feedback loop |
-| [Amazon ESCI](https://github.com/amazon-science/esci-data) | 商品検索のrelevance・多言語GT | Judgments |
-| [OpenSearch Search Relevance](https://github.com/opensearch-project/dashboards-search-relevance) | Query Set・Judgment・検索構成の比較 | Experiment / Evaluation |
-| [Qdrant demo](https://github.com/qdrant/qdrant_demo) | 検索方式の比較構成 | Retrieval |
-| [Elasticsearch LTR](https://github.com/o19s/elasticsearch-learning-to-rank) | Feature定義・記録・学習・rerankの分離 | Features / Ranker |
-| [Quepid](https://github.com/o19s/quepid) | Query・判定・結果・実験の関係 | 評価ドメイン |
-
-補助候補はAmazon KDD Cup（LightGBMとの統合）、code-mixed-search-benchmark（多言語の失敗分析）、ir_measures（指標計算）、runs-and-qrels（評価データ構成）。出典・候補一覧・元の主張は [添付全文](./archive/search-quality-loop-oss-references.md) に保存する。
-
-## 運用上の境界
-
-非機密設定は `env/config.yaml`、ローカル秘密情報はignore対象の `env/secret.yaml`、共有・本番の秘密情報はDoppler等で管理する。実験別設定と成果物の保存先は実装時に決める。
-
-Codex / 他エージェント共通の永続指針は `AGENTS.md` に置き、`.claude/` の常時読込を前提にしない。
-
-## 関連タスク
-
-構造・責務・adapter変更は実装前にtaskを作り、確定判断を本文またはADRに反映する。
-
-- [未決事項と採否判断](./tasks/02_backlog/20260921-search-quality-poc-decisions.md)
-- [Golden Pathの段階的実装](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)
-- [タスク一覧](./tasks/README.md)
+[未決事項](./tasks/02_backlog/20260921-search-quality-poc-decisions.md) / [実装計画](./tasks/02_backlog/20260921-search-quality-poc-implementation.md)。構造・責務変更はtaskで影響と検証を記録し、確定事項を本文へ反映する。

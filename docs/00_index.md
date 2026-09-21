@@ -39,7 +39,8 @@
 
 ## PoC設計の素材
 
-- [設計メモ](./検索品質-継続改善ループ-PoC設計メモ.md): 整理済み仕様・設計と保存素材の入口。
+- [元設計メモ](./archive/search-quality-loop-brainstorm.md): 整理前の検討素材（現行契約は01〜08）。
+- [参照実装レビュー](./reference-implementation-review.md): 固定commitで確認した事実と設計への採否。
 - `archive/`: 元メモ・添付全文を保存する参考素材。権威順位は最下位。
 
 ## ハーネス（AI 制御）

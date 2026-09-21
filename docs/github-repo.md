@@ -1,3 +1,5 @@
+> ローカル参照用clone: [`../references/github/`](../references/github/) 配下の `<owner>/<repo>/`。一覧10件＋補足2件の計12件を `--depth 1` で取得済み。Git管理対象外。取得commitは `references/github/clone-results.json` に記録。Git LFSの実体取得・submoduleの取得・依存インストールは未実施。
+
 結論として、今回の `parts-search-quality-loop` は、**1つのGitHubリポを真似するより、5〜7個を役割別に組み合わせるのが正解**です。
 
 特に参考価値が高いのは、**Metarank / Amazon ESCI / Qdrant demo / Quepid / OpenSearch Search Relevance / Elasticsearch LTR** の6系統です。

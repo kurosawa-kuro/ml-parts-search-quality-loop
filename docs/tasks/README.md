@@ -99,3 +99,7 @@
 - [未決事項と採否判断](02_backlog/20260921-search-quality-poc-decisions.md)
 - [Golden Pathの段階的実装](02_backlog/20260921-search-quality-poc-implementation.md)
 - [仕様・設計整理の作業記録](05_done/20260921-distill-search-quality-spec.md)
+
+- [参照実装に基づく01〜08の設計改善](05_done/20260921-reference-design-review.md)
+
+- [ローカルPoC設定の整備](05_done/20260921-configure-local-poc.md)

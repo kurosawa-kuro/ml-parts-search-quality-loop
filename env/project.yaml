@@ -1,9 +1,7 @@
-# Project path/name source of truth.
-#
-# Edit this file after moving or renaming the project, then run:
-#   make render-project-config
-
+# ローカルのプロジェクト名・パスの正本。
+# 移動時はこのファイルを更新する。設定rendererは未実装。
+schemaVersion: 1
 projectName: parts-search-quality-loop
-repoRoot: /Users/kurosawa/Dev/parts-search-quality-loop
+repoRoot: /Users/kurosawa/Dev/ml-parts-search-quality-loop
 workspaceRoot: /Users/kurosawa/Dev
 homeDir: /Users/kurosawa

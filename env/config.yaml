@@ -1,20 +1,138 @@
-# ===========================================
-# プロジェクト固有設定
-# 環境変数で個別にオーバーライド可能
-# ローカル秘密情報は env/secret.yaml、共有・本番クレデンシャルは Doppler で管理 (doppler.yaml)
-# ===========================================
-
-# --- アプリケーション ---
-projectName: <your-project>
+# PoC初期設定。パスは env/project.yaml の repoRoot を基準に解決する。
+# 設定loader・CLIは未実装。nullの必須項目は該当工程の開始前に確定する。
+# 秘密値はここに書かず env/secret.yaml または secret manager から取得する。
+schemaVersion: 1
+projectName: parts-search-quality-loop
 appEnv: local
-port: 8080
+executionMode: batch
 logLevel: info
 
-# --- サーバー ---
-server:
-  timeout: 60
-  corsAllowAll: true
+paths:
+  artifacts: artifacts
+  references: references/github
+  activeRelease: artifacts/active.json
 
-# --- 機能フラグ ---
-# authEnabled: false
-# rateLimitPerMinute: 1000
+artifacts:
+  schemaVersion: 1
+  metadataFormat: json
+  recordsFormat: jsonl
+  encoding: utf-8
+  checksum: sha256
+  immutableSnapshots: true
+  atomicPublish: true
+
+catalog:
+  domain: fa_parts
+  skuCount: 10000
+  languages: [ja, en]
+  seed: 42
+  # カテゴリ別の属性・単位・許容差を定義した後に設定する。
+  attributePolicyId: null
+
+queries:
+  familyCount: 1000
+  types: [exact_model_number, natural_language, dimension_sensitive]
+  generationSeed: 43
+
+split:
+  unit: family_id
+  seed: 44
+  ratios:
+    train: 0.60
+    tuning: 0.15
+    holdout: 0.15
+    production: 0.10
+  generationSeeds:
+    train: 42
+    tuning: 73
+    holdout: 137
+    production: 999
+  allowFamilyOverlap: false
+  sharedCatalog: true
+
+retrieval:
+  backend: qdrant
+  candidateLimit: 100
+  resultLimit: 100
+  tieBreak: product_id_asc
+  qdrant:
+    url: http://localhost:6333
+    collectionPrefix: parts_search
+    timeoutSeconds: 15
+    apiKeySecret: DB_QDRANT_API_KEY
+  embedding:
+    # モデル選定・固定revisionの解決は未完了。
+    modelId: null
+    revision: null
+    preprocessingVersion: null
+  hybrid:
+    enabled: false
+  structuredFilter:
+    enabled: false
+
+features:
+  # 型・順序・欠損規約を定義したFeatureSchemaへ結びつける。
+  schemaId: null
+
+ranker:
+  implementation: lightgbm
+  objective: lambdarank
+  seed: 42
+  labelGain: [0, 0, 1, 3, 7]
+  fitSplit: train
+  tuningSplit: tuning
+
+judgments:
+  policyId: parts_gt_v1
+  requireCompleteEvaluation: true
+  promoteImplicitToEvaluation: false
+
+evaluation:
+  policyId: parts_metrics_v1
+  implementation: ir_measures
+  # 導入時に互換性を確認して依存lockとともに固定する。
+  version: null
+  provider: null
+  ndcgCutoff: 10
+  recallCutoff: 100
+  mrrCutoff: 100
+  relevanceThreshold: 2
+  gainByRelevance: [0, 0, 1, 3, 7]
+  dcgFormula: gain_over_log2_rank_plus_one
+  aggregation: query_macro
+  noRelevantPolicy: exclude_and_report
+  incompletePolicy: inconclusive
+  slices: [language, query_type, category]
+
+qualityGate:
+  # baseline測定後、candidate比較前に固定。nullなら採用判定不可。
+  policyId: null
+  minNdcgDelta: null
+  maxRegression:
+    recallAt100: null
+    mrrAt100: null
+    sliceNdcgAt10: null
+    searchSuccessRate: null
+    wrongFitmentRate: null
+  minSliceQueries: null
+  repetitionSeeds: null
+
+simulation:
+  # 観測窓・行動確率・位置バイアス・分布shiftを固定するまで無効。
+  enabled: false
+  policyId: null
+  observationWindowSeconds: null
+  behaviorModel: null
+  developmentSplit: tuning
+  validationSplit: production
+  pairedRandomStreams: true
+
+retry:
+  retrievalMaxAttempts: 3
+  backoffSeconds: [1, 2]
+
+release:
+  mode: local_simulation
+  requireAcceptedDecision: true
+  requireSmoke: true
+  preservePreviousBundle: true
