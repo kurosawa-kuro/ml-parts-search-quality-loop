@@ -12,8 +12,8 @@ from urllib.parse import urlsplit
 import yaml
 from jsonschema import Draft202012Validator
 
-from parts_search_quality_loop.config.schema import CONFIG_SCHEMA, PROJECT_SCHEMA, SECRET_SCHEMA
-from parts_search_quality_loop.errors import FoundationError
+from parts_search.config.schema import CONFIG_SCHEMA, PROJECT_SCHEMA, SECRET_SCHEMA
+from parts_search.errors import FoundationError
 
 STAGES = ("foundation", "catalog", "retrieval", "training", "evaluation", "gate", "simulation")
 

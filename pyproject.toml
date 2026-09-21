@@ -11,13 +11,24 @@ requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0.2,<7", "jsonschema>=4.23,<5"]
 
 [project.scripts]
-parts-search = "parts_search_quality_loop.cli:main"
+parts-search = "parts_search.cli:main"
 
 [dependency-groups]
-dev = ["ruff>=0.11,<1"]
+# ライブラリは同一 minor に固定する（.claude/rules/python.md）。
+dev = ["ruff>=0.11,<1", "pytest>=8.4,<8.5"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+# 既定の `make test` は単体・CLI 結合のみ。実接続テストは marker で外に出す
+# （.claude/rules/tests.md「実接続テストは明示マークで分け、既定の make test から外す」）。
+# unittest には marker 機構が無くこの契約を満たせないため pytest を使う。
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config -m 'not integration'"
+markers = [
+  "integration: 実サービス（ローカル Qdrant 等）へ接続する。既定の実行から除外する",
+]
 
 [tool.ruff]
 target-version = "py311"

@@ -140,7 +140,10 @@ CONFIG_SCHEMA = obj(
         repetitionSeeds=nullable(array(SEED)),
     ),
     simulation=obj(
-        enabled=const(False),
+        # const(False) だと T7 で simulation を有効化できず、段階が永久に実行不能になる。
+        # blockers() が enabled=false を未充足として報告する仕組みが既にあるので、
+        # ここは boolean にして「まだ有効化していない」を設定で表現する。
+        enabled={"type": "boolean"},
         policyId=OPTIONAL_TEXT,
         observationWindowSeconds=nullable(POSITIVE),
         behaviorModel=OPTIONAL_TEXT,

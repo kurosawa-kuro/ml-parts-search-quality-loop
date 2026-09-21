@@ -1,0 +1,3 @@
+{"run_id": "R-001", "query_id": "Q-0001", "product_id": "P-0001", "rank": 1, "score": 0.8763, "score_type": "similarity", "model_id": null}
+{"run_id": "R-001", "query_id": "Q-0001", "product_id": "P-0002", "rank": 2, "score": 0.8190, "score_type": "similarity", "model_id": null}
+{"run_id": "R-001", "query_id": "Q-0002", "product_id": "P-0001", "rank": 1, "score": 0.7412, "score_type": "similarity", "model_id": null}

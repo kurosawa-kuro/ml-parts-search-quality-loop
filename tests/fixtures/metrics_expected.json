@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "source": "docs/07_test_strategy.md 指標の手計算fixture",
+  "note": "合成生成器と独立に手で置いた値。T4 の指標実装はこれに一致すること。",
+  "policy": {
+    "gain_by_relevance": [
+      0,
+      0,
+      1,
+      3,
+      7
+    ],
+    "relevance_threshold": 2,
+    "ndcg_cutoff": 10,
+    "recall_cutoff": 100,
+    "mrr_cutoff": 100,
+    "dcg_formula": "gain_over_log2_rank_plus_one"
+  },
+  "ground_truth": {
+    "A": 4,
+    "B": 3,
+    "C": 0
+  },
+  "cases": [
+    {
+      "name": "results_B_C_A",
+      "ranking": [
+        "B",
+        "C",
+        "A"
+      ],
+      "expected": {
+        "dcg_at_10": 6.5,
+        "idcg_at_10": 8.8927892607,
+        "ndcg_at_10": 0.7309292742,
+        "recall_at_100": 1.0,
+        "rr_at_100": 1.0
+      },
+      "reason": "rank1 の B が relevance>=2 なので RR=1。A,B 両方取得済みで Recall=1"
+    },
+    {
+      "name": "results_C_A_B",
+      "ranking": [
+        "C",
+        "A",
+        "B"
+      ],
+      "expected": {
+        "rr_at_100": 0.5
+      },
+      "reason": "最初の適合は rank2 の A"
+    },
+    {
+      "name": "zero_results_with_relevant_gt",
+      "ranking": [],
+      "expected": {
+        "ndcg_at_10": 0.0,
+        "recall_at_100": 0.0,
+        "rr_at_100": 0.0
+      },
+      "reason": "正解があるのに正常0件。**失敗ではなく 0 点**"
+    },
+    {
+      "name": "execution_failed",
+      "ranking": null,
+      "expected": {
+        "ndcg_at_10": null,
+        "recall_at_100": null,
+        "rr_at_100": null
+      },
+      "status": "inconclusive",
+      "reason": "実行失敗は値 null。0 点と区別する"
+    },
+    {
+      "name": "no_relevant_complete_gt",
+      "ranking": [
+        "C"
+      ],
+      "expected": {},
+      "status": "no_relevant",
+      "reason": "完全GTで適合が存在しない。exclude_and_report。未判定ありの inconclusive とは別"
+    }
+  ]
+}

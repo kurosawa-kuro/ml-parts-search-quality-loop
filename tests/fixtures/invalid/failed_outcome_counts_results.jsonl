@@ -1,0 +1,1 @@
+{"run_id": "R-001", "query_id": "Q-0001", "status": "failed", "returned_count": 7, "error_code": "timeout", "attempt": 2, "latency_ms": 15000}

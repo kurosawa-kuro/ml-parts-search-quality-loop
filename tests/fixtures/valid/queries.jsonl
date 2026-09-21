@@ -1,0 +1,2 @@
+{"query_id": "Q-0001", "family_id": "F-001", "text": "SHF-20", "language": "ja", "query_type": "exact_model_number", "category": "linear_shaft", "constraints": {"required": {"model_number": "SHF-20"}, "optional": {}}}
+{"query_id": "Q-0002", "family_id": "F-001", "text": "直径20mmのリニアシャフト", "language": "ja", "query_type": "dimension_sensitive", "category": "linear_shaft", "constraints": {"required": {"diameter": {"value": 20, "unit": "mm"}}, "optional": {}}}

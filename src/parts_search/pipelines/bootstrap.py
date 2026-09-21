@@ -7,8 +7,8 @@ import subprocess
 from importlib.metadata import version
 from pathlib import Path
 
-from parts_search_quality_loop.artifacts.store import checksum, new_run_id, publish_run
-from parts_search_quality_loop.config.loader import STAGES, Settings
+from parts_search.config.loader import STAGES, Settings
+from parts_search.runstore import checksum, new_run_id, publish_run
 
 
 def provenance(root: Path) -> dict:

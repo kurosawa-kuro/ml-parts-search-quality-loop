@@ -66,7 +66,10 @@ __pycache__/
 htmlcov/
 .venv/
 venv/
-artifacts/
+# リポジトリ直下の成果物だけを無視する。**アンカー必須**:
+# 非アンカーの `artifacts/` は同名のソースモジュールにも当たり、
+# src 配下のコードを git から消していた（2026-09-22 実害）。
+/artifacts/
 
 # Terraform
 .terraform/

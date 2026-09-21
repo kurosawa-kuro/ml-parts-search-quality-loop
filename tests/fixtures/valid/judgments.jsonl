@@ -1,0 +1,4 @@
+{"gt_id": "GT-001", "query_id": "Q-0001", "product_id": "P-0001", "status": "judged", "relevance": 4, "source": "rule", "reason": "required model_number exact match", "rule_version": "parts_gt_v1", "evidence_ids": ["P-0001#model_number"]}
+{"gt_id": "GT-001", "query_id": "Q-0001", "product_id": "P-0002", "status": "judged", "relevance": 0, "source": "rule", "reason": "required model_number mismatch", "rule_version": "parts_gt_v1", "evidence_ids": ["P-0002#model_number"]}
+{"gt_id": "GT-001", "query_id": "Q-0002", "product_id": "P-0001", "status": "judged", "relevance": 3, "source": "rule", "reason": "category and required diameter match", "rule_version": "parts_gt_v1", "evidence_ids": ["P-0001#diameter"]}
+{"gt_id": "GT-001", "query_id": "Q-0002", "product_id": "P-0002", "status": "unrateable", "relevance": null, "source": "rule", "reason": "surface_treatment unknown; cannot decide fitment", "rule_version": "parts_gt_v1", "evidence_ids": []}

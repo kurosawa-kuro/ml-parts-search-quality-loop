@@ -11,9 +11,9 @@ from pathlib import Path
 
 import yaml
 
-from parts_search_quality_loop.artifacts.store import publish_run, verify_run
-from parts_search_quality_loop.config.loader import load_secret, load_settings
-from parts_search_quality_loop.errors import FoundationError
+from parts_search.config.loader import load_secret, load_settings
+from parts_search.errors import FoundationError
+from parts_search.runstore import publish_run, verify_run
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -44,8 +44,18 @@ class FoundationTest(unittest.TestCase):
     def test_config_paths_and_readiness(self):
         s = self.settings()
         self.assertEqual(s.artifacts_root, self.root / "artifacts")
-        self.assertIn("retrieval.embedding.revision", s.blockers("retrieval"))
         self.assertEqual(s.blockers("foundation"), [])
+
+    def test_blockers_report_missing_values_not_current_config(self):
+        """blocker 機構そのものを検査する。
+
+        リポジトリの config が埋まった瞬間に壊れる書き方（現在値への依存）をしない。
+        未設定を**この test が作って**報告されることを確かめる。
+        """
+        self.assertEqual(self.settings().blockers("retrieval"), [])
+        self.config["retrieval"]["embedding"]["revision"] = None
+        self.write()  # settings() は読むだけ。変更は書き出してから読み直す
+        self.assertIn("retrieval.embedding.revision", self.settings().blockers("retrieval"))
 
     def test_rejects_invalid_config(self):
         original = copy.deepcopy(self.config)
@@ -133,7 +143,7 @@ class FoundationTest(unittest.TestCase):
         cmd = [
             sys.executable,
             "-m",
-            "parts_search_quality_loop",
+            "parts_search",
             "--project",
             str(self.root / "env/project.yaml"),
             "--config",
@@ -151,11 +161,16 @@ class FoundationTest(unittest.TestCase):
         self.assertNotIn("metrics.json", manifest["outputs"])
         for artifact in Path(report["run_dir"]).iterdir():
             self.assertNotIn("CANARY_SECRET", artifact.read_text())
+        # 未設定を作ってから検査する（現在の config が埋まっていても成立させる）
+        self.config["retrieval"]["embedding"]["revision"] = None
+        self.write()
         result = subprocess.run(
             cmd + ["config-check", "--stage", "retrieval"], env=env, capture_output=True, text=True
         )
         self.assertEqual(result.returncode, 1)
-        self.assertFalse(json.loads(result.stdout)["ready"])
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ready"])
+        self.assertIn("retrieval.embedding.revision", payload["blockers"])
 
 
 if __name__ == "__main__":

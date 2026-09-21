@@ -1,0 +1,1 @@
+{"decision_id": "D-001", "baseline_run_id": "R-001", "candidate_run_id": "R-002", "policy_id": "parts_gate_v1", "comparison": {}, "denominators": {}, "gate_results": {}, "decision": "promote", "reason": "ndcg improved", "release_id": null}
