@@ -20,14 +20,24 @@
 ## コマンド
 
 ```bash
-make setup    # 初期セットアップ (依存取得 + ビルド)
-make build    # ビルド
-make run      # 実行
-make dev      # 開発サーバー / ホットリロード
-make test     # テスト
-make fmt      # フォーマット
-make lint     # 静的解析
+make setup        # uv.lockから.venvへ依存導入
+make config-check # foundation設定検証
+make run          # foundation run作成。検索・学習は実行しない
+make dev          # make runと同じ。開発サーバーではない
+make test         # unittestとCLI結合テスト
+make fmt          # Ruff import修正・format
+make lint         # Ruff lint・format check
+make build        # wheel / sdist build
 ```
+
+現在のCLIは`config-check`、`bootstrap`、`verify-artifact`のみ。Retrieval、GT生成、学習、評価、simulation、releaseのCLIは未実装。
+
+## 現在地
+
+- 実装済み: 設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、foundation bootstrap。
+- 未実装: 検索・GT・Feature・学習・評価・FailureCase・疑似オンライン・ReleaseBundle。
+- 実装順: [マスタータスク](docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md)のT1〜T8。
+- owner判断待ち: [未決事項](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。
 
 ## アーキテクチャ
 
@@ -39,6 +49,8 @@ make lint     # 静的解析
 
 ## 作業ルール
 
+- 作業開始時に`pwd`と`git rev-parse --show-toplevel`を実行し、両方が`/Users/kurosawa/Dev/ml-parts-search-quality-loop`を指すことを確認する。会話の直前まで扱っていた別リポジトリを優先しない。
+- ユーザーがフルパスを指定した場合、そのパスを最優先の作業対象とし、書き込み前後に変更パスを検査する。
 - 推測でコードを書かない。コマンドを書いたら実際に実行して確認する。
 - 仕様変更は連動する `docs/` とテストを同一 PR で直す。drift を作らない。
 - 既存の関数・ユーティリティ・パターンを優先的に再利用する。
@@ -59,3 +71,7 @@ Thin Harness の常時手順。詳細は `.claude/README.md` と `docs/specs/run
 6. 必要 Evidence Level（≥2、本番は4）で検証（`verify-completion` / `evidence-policy.md`）。
 7. scope 拡大・保護境界接触・二度違う理由で検証失敗 → 停止して owner へ。
 8. 非自明な判断を下した時だけ記録（`log-decision`）。
+
+## Taskの開始点
+
+次の機能実装はT1 [データ契約validatorと手書きfixture](docs/tasks/02_backlog/2026-09-22-データ契約validatorと手書きfixture.md)。各taskを`03_active`へ物理移動してから着手し、依存taskとowner判断を飛ばさない。

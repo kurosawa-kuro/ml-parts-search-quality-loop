@@ -98,6 +98,14 @@
 
 - [未決事項と採否判断](02_backlog/20260921-search-quality-poc-decisions.md)
 - [Golden Pathの段階的実装](02_backlog/20260921-search-quality-poc-implementation.md)
+- [T1 データ契約validatorと手書きfixture](02_backlog/2026-09-22-データ契約validatorと手書きfixture.md)
+- [T2 合成カタログ・Query・GTとfamily分割](02_backlog/2026-09-22-合成カタログQueryGTとfamily分割.md)
+- [T3 Vector Baseline検索とSearchRun](02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md)
+- [T4 評価・Slice・FailureCase](02_backlog/2026-09-22-評価SliceとFailureCase.md)
+- [T5 構造化FeatureとLambdaRank](02_backlog/2026-09-22-構造化FeatureとLambdaRank.md)
+- [T6 Experiment比較と品質Gate](02_backlog/2026-09-22-Experiment比較と品質Gate.md)
+- [T7 疑似オンラインFeedback Loop](02_backlog/2026-09-22-疑似オンラインFeedbackLoop.md)
+- [T8 独立評価・Release・Golden Path](02_backlog/2026-09-22-独立評価ReleaseとGoldenPath.md)
 - [仕様・設計整理の作業記録](05_done/20260921-distill-search-quality-spec.md)
 
 - [参照実装に基づく01〜08の設計改善](05_done/20260921-reference-design-review.md)

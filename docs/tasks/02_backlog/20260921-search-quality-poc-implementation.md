@@ -10,20 +10,23 @@
 
 ## Scope / Plan
 
-以下を実装単位ごとのtaskへ分割して進める。
+以下の個別taskを依存順に進める。
+
+| # | task | 主な要件 | 依存 |
+|---|---|---|---|
+| T1 | [データ契約validatorと手書きfixture](./2026-09-22-データ契約validatorと手書きfixture.md) | AC-001, 008, 009 | foundation |
+| T2 | [合成カタログ・Query・GTとfamily分割](./2026-09-22-合成カタログQueryGTとfamily分割.md) | AC-001, 005, 008 | T1、商材判断 |
+| T3 | [Vector Baseline検索とSearchRun](./2026-09-22-VectorBaseline検索とSearchRun.md) | AC-001, 002, 008 | T1,T2、Embedding判断 |
+| T4 | [評価・Slice・FailureCase](./2026-09-22-評価SliceとFailureCase.md) | AC-002, 003, 006, 008, 011 | T1,T3 |
+| T5 | [構造化FeatureとLambdaRank](./2026-09-22-構造化FeatureとLambdaRank.md) | AC-006, 009 | T1,T2,T3 |
+| T6 | [Experiment比較と品質Gate](./2026-09-22-Experiment比較と品質Gate.md) | AC-001, 002, 003, 011 | T4,T5、品質閾値判断 |
+| T7 | [疑似オンラインFeedback Loop](./2026-09-22-疑似オンラインFeedbackLoop.md) | AC-004, 006, 007, 008 | T4,T6、SimulationPolicy判断 |
+| T8 | [独立評価・Release・Golden Path](./2026-09-22-独立評価ReleaseとGoldenPath.md) | AC-001〜011 | T1〜T7 |
 
 - [x] 設定schema、foundation runのJSON/JSONL・manifest保存と改変検証。
-- [ ] 検索・GT・Feature・modelのレコードvalidatorと07の指標手書きfixture。
-- [ ] 商品マスタ・クエリ・GT生成、独立したデータ分割。
-- [ ] Vector-only検索とSearchRun記録。
-- [ ] 全体指標・Slice・FailureCaseの生成。
-- [ ] 構造化FeatureとLightGBM LambdaRankの学習・推論。
-- [ ] Experimentと入力・設定・モデル・成果物の関連づけ。
-- [ ] 疑似オンラインイベントとKPI、失敗抽出からGT更新への接続。
-- [ ] Holdout / Production-like比較、採否と次の実験の記録。
-- [ ] 不完全評価の停止、再試行・event隔離、bundle切替・rollback。
+- [ ] T1〜T8を依存順に完了する。
 - [x] foundation CLIとMakefile、設定・成果物の実テストを接続。
-- [ ] ML工程CLI、07の品質テスト、08のsmokeコマンドを実装。
+- [ ] 各taskで対応するML工程CLI、07の品質テスト、08のsmokeコマンドを実装。
 - [ ] 01〜08の設計契約v1に対する実装確認と差分反映。
 
 ## Acceptance Criteria
