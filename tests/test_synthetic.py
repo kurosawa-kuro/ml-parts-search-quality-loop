@@ -284,6 +284,7 @@ def test_saved_dataset_with_missing_evidence_produces_inconclusive_gt(settings):
     for p in outputs["catalog.jsonl"]:
         p["attributes"]["material"] = None
     metadata["set_digests"]["catalog"] = digest(outputs["catalog.jsonl"])
+    metadata["dataset_id"] = "dataset-" + digest(metadata["set_digests"])[:24]
     dataset = publish_run(
         settings.artifacts_root / "datasets",
         "missing",

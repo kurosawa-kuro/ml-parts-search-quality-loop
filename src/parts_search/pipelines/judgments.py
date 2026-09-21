@@ -131,6 +131,13 @@ def build_judgments(config: dict, dataset: Path) -> tuple[dict, dict]:
     content = {"catalog": digest(products), "queryset": digest(queries), "split": digest(split)}
     if content != metadata.get("set_digests"):
         raise FoundationError("Dataset set digests disagree with input records")
+    expected_ids = {
+        "dataset_id": "dataset-" + digest(content)[:24],
+        "queryset_id": "queryset-" + content["queryset"][:24],
+        "split_id": split["split_id"],
+    }
+    if any(metadata.get(key) != value for key, value in expected_ids.items()):
+        raise FoundationError("Dataset content identifiers disagree with input records")
     gt_id = "gt-" + digest([content, GT_POLICY, POLICY])[:24]
     stats = {
         "schema_version": 1,
