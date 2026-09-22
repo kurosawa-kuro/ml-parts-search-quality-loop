@@ -67,3 +67,28 @@ safety / integrity
 
 - 独立評価集合を改善作業へ流用する必要が出たとき。
 - acceptedな改善例が得られず、PoCの範囲または成功条件を変更する必要があるとき。
+
+## 一括検証（2026-09-22、実E5 + ローカルQdrant）
+
+`make test-all` 相当: `uv run --locked pytest -m ''` → **146 passed**。`ruff check` clean。
+
+CLI通し実行（1,500 SKU / 700 family / 1,400 Query / 完全GT 2,100,000行）:
+
+```
+parts-search pipeline  → exit 0 / golden_path_complete: true / quality: promote
+  contracts catalog judgments retrieval evaluation training gate simulation ×2 release = 全 completed
+```
+
+| 観測 | 実測 |
+|---|---|
+| offline比較（seed 11/22/33） | accepted・repetition_complete |
+| 独立holdout比較 | **accepted**・評価可能 210 query・NDCG@10 差 **+0.2762**・Recall@100 差 0 |
+| online guardrail | searchSuccessRate **+0.2143** / wrongFitmentRate **−0.2143** → いずれも合格 |
+| simulation | joined impression **560**・orphan 0・comparison_ready true |
+| KPI（baseline→candidate） | searchSuccess 0.757→**0.971** / CTR 0.566→0.718 / conversion 0.150→0.195 / reformulation 0.227→0.171 / wrongFitment 0.243→**0.029** / zeroResult 0.0 |
+| smoke 6段階 | すべて passed（`model_compatibility`はmodelを実際に読み込みFeatureSchema checksumと列順を照合） |
+| decision | **promote**・`bundle.json`を生成 |
+| active切替 | activate（previous: null）→ activate（previous: 前release）→ rollback で前releaseへ復帰。`active-history.jsonl` 3行。旧bundleは保持 |
+
+小規模（120 SKU / 40 family）では `minSliceQueries=30` を満たさず **exit 4 / inconclusive**。
+実行は成功しているので exit 1 と混同しない。**採用を得るために閾値を下げていない。**

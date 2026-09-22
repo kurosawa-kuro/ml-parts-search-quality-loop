@@ -2,7 +2,7 @@
 
 ## 現状追記（2026-09-22、T3〜T6接続）
 
-Embedding前処理/Qdrant adapter・8列FeatureSchema・ir_measures評価・3 seed offline比較を実装済み。詳細は05の実装契約と実装マスターを参照。以下は設定決定時点の履歴を含む。simulation詳細・独立評価・releaseは残る。
+Embedding前処理/Qdrant adapter・8列FeatureSchema・ir_measures評価・3 seed offline比較・**疑似オンラインsimulation・独立評価・Release切替**まで実装済み。詳細は05の実装契約と実装マスターを参照。以下は設定決定時点の履歴を含む。
 
 ## Goal
 
@@ -22,7 +22,7 @@ Embedding前処理/Qdrant adapter・8列FeatureSchema・ir_measures評価・3 se
 | MetricPolicy | gain・cutoff・null規約・手計算期待値、ir_measures 0.4.3の導入・版設定 | providerによる計算実装と独立fixture照合 / T4 |
 | FeatureSchema | `parts_features_v1`とlabel_gain、LightGBM依存を設定済み | 列順・型・欠損・変換・checksum・モデル数値許容差 / T5 |
 | 品質Gate | 閾値・guardrail・Slice最低件数・反復seedは仮置き済み | 比較前の凍結、比較ロジック・採否検証 / T6 |
-| SimulationPolicy | policy ID・観測窓1800秒・方式・paired streamを設定済み | 位置バイアス関数・各確率・分布shiftの具体化、生成とKPI / T7 |
+| SimulationPolicy | **T7で具体化し版付きで固定（`parts_sim_v1.0.0`）**: 位置バイアス`1/rank**1.0`、click .65/.30/.03、conversion .25、reformulation .80/.45/.05、sessionsPerQuery 4、seed 777、遅着2400秒 | 実データ校正は対象外（実ユーザー行動が必要） |
 | 実行環境 | Python/numpy/torch制約、依存lock、CLI入口 | 各工程の接続・数値再現性検証 / T3〜T8 |
 | Hybrid / OSS追加 | 現行vector-onlyの対象外 | 導入が必要になった時に採否・ライセンス・互換性を確認 |
 
@@ -105,9 +105,12 @@ dense embedding は**型番の完全一致に弱い**（`SHF-20` と `SHF-25` �
 | `simulation.policyId` | `parts_sim_v1` | — |
 | `simulation.observationWindowSeconds` | `1800` | 30 分 |
 | `simulation.behaviorModel` | `position_biased_cascade_v1` | 位置バイアス付き cascade |
-| `simulation.enabled` | `false` | T7 未実装。**有効化できる**ことは確認済み（下記 schema 修正） |
+| `simulation.enabled` | `true` | T7 実装済み（2026-09-22 に有効化） |
+| `simulation.policyVersion` | `parts_sim_v1.0.0` | 版が null なら段階を blocked にする |
 
 結果: `make pipeline` の blocked が **8/9 → 1/9**（simulation のみ、意図的に無効）。
+2026-09-22 に T7/T8 を実装し、**blocked 0/9・9 段階すべて completed**。品質は小規模データで
+slice 件数不足のため inconclusive（exit 4）。**閾値は凍結値のまま変更しない。**
 
 ### schema の設計欠陥を修正
 

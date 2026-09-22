@@ -42,7 +42,7 @@ make build        # wheel / sdist build
 ## 現在地
 
 - 実装済み: T1〜T8の実処理。設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、契約validator＋手書きfixture、合成Catalog/Query/完全GT、E5+Qdrant検索、評価・Slice・FailureCase、構造化Feature＋LambdaRank、凍結Gate比較、**疑似オンラインsimulation（版付きpolicy・paired stream・KPI・GT候補）**、**独立評価→ReleaseBundle→active原子切替→rollback**。
-- 段階状態（2026-09-22、CLI pipelineで実測）: 9段階すべて`completed`。小規模データではslice件数不足で`quality=inconclusive`（exit 4）。**採用されていないことを実行失敗と読み替えない。**
+- 段階状態（2026-09-22、CLI pipelineで実測）: 9段階すべて`completed`。1,500 SKU / 700 family / 1,400 Queryの通し実行で **exit 0・decision=promote・smoke 6段階pass・activate→rollback**まで確認。小規模データではslice件数不足で`quality=inconclusive`（exit 4）。**採用されていないことを実行失敗と読み替えない。**
 - 品質閾値は凍結値。**acceptedを得るために閾値を下げない**（下げるのはNon-scope）。
 - 依存の制約: **`numpy<2` / Python`<3.13`**（x86_64 mac -> torch 2.2.2 -> numpy<2 -> Python<3.13 の連鎖）。LightGBMは`brew install libomp`が必要。
 - 実装順: [マスタータスク](docs/tasks/03_active/20260921-search-quality-poc-implementation.md)のT1〜T8。

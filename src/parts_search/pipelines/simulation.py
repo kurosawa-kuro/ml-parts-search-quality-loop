@@ -220,8 +220,8 @@ def build_simulation(
                             },
                         )
                     break  # cascade: 最初の click で離脱する
-            kind = "zeroResult" if not shown else ("afterClick" if clicked else "noClick")
-            reformulated = draws[-1] < reformulation[kind]
+            after = "zeroResult" if not shown else ("afterClick" if clicked else "noClick")
+            reformulated = draws[-1] < reformulation[after]
             # 一部を観測窓外へずらし、遅着が隔離されることを実データで踏む。
             arrives_late = draws[-2] < 0.02
             if reformulated:
@@ -253,6 +253,8 @@ def build_simulation(
                     "query_id": qid,
                     "session_id": session_id,
                     "status": outcome["status"],
+                    # バッチ simulation は観測窓の全区間を一度に生成するため常に閉じている。
+                    # 逐次追記の経路が増えたときに未完了を検出できるよう、値として持つ。
                     "window_closed": True,
                     "items": len(shown),
                     "top_label": top_label,

@@ -17,6 +17,7 @@ from parts_search.errors import FoundationError
 from parts_search.pipelines.gate import compare
 from parts_search.pipelines.inputs import artifact, reference
 from parts_search.pipelines.synthetic import check_records, digest
+from parts_search.pipelines.training import load_model
 from parts_search.records.io import iter_jsonl, read_json
 from parts_search.runstore import file_checksum
 
@@ -256,10 +257,21 @@ def _smoke(
             "failure_cases": len(failures),
         }
     )
+    # 「checksum が読めた」を互換性の証拠にしない。実際に model を読み込んで
+    # FeatureSchema・列順・gain policy まで一致することを確かめる。
+    training_path = Path(read_json(candidate / "manifest.json")["metadata"]["search"]["path"])
+    schema = read_json(training_path / "feature_schema.json")
+    schema.pop("schema_version", None)
+    compatible = True
+    try:
+        load_model(read_json(training_path / "model.json"), schema)
+    except FoundationError:
+        compatible = False
     checks.append(
         {
             "stage": "model_compatibility",
-            "passed": file_checksum(candidate / "manifest.json") is not None,
+            "passed": compatible,
+            "model_manifest_checksum": file_checksum(training_path / "manifest.json"),
         }
     )
     checks.append(

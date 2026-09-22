@@ -16,8 +16,8 @@
 | T4 | オフライン評価、Slice、FailureCase | 実装済み |
 | T5 | 構造化FeatureとLightGBM LambdaRank | 実装済み |
 | T6 | Experiment比較と品質Gate | 実装済み（系譜・終了コード分離まで） |
-| T7 | 疑似オンラインFeedback Loop | 実装済み（通し実行の証跡待ち） |
-| T8 | 独立評価、Release、rollback、Golden Path E2E | 実装済み（promote経路の証跡待ち） |
+| T7 | 疑似オンラインFeedback Loop | 実装済み |
+| T8 | 独立評価、Release、rollback、Golden Path E2E | 実装済み（promote→activate→rollbackを実測） |
 
 商材別GTは05のT2契約、Embedding・FeatureSchema・品質閾値・SimulationPolicyの値はconfigと判断記録を参照する。設定が揃ったことを正式評価の合格とは扱わない。
 
