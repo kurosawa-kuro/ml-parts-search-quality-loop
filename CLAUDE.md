@@ -25,24 +25,25 @@ make config-check # foundation設定検証
 make run          # foundation run作成。検索・学習は実行しない
 make dev          # make runと同じ。開発サーバーではない
 make stages       # Golden Path 9段階と依存設定の一覧
-make pipeline     # 9段階を骨組み実行。exit 2=blocked / 3=skeletonのみ
+make pipeline     # 9段階を実行。exit 2=blocked / 4=品質不採用
 make test         # pytest。単体・CLI結合のみ（integration markerを除外）
-make test-all     # integration markerも実行。現在T3未実装で失敗するのが正
+make test-all     # integration markerも実行（実E5/Qdrantが要る）
 make fmt          # Ruff import修正・format
 make lint         # Ruff lint・format check
 make build        # wheel / sdist build
 ```
 
-現在のCLIは`config-check`、`bootstrap`、`verify-artifact`、`stages`、`stage`、`pipeline`。
-`stage` / `pipeline`は段階実行の入口で、contracts・catalog・judgmentsを実装済み。Retrieval、学習、評価、simulation、releaseは未実装。
+現在のCLIは`config-check`、`bootstrap`、`verify-artifact`、`stages`、`stage`、`pipeline`、`activate`、`rollback`。
+**Golden Path 9段階すべてが実処理**（contracts / catalog / judgments / retrieval / evaluation / training / gate / simulation / release）。
 
-**終了コード**: 0=完了 / 1=エラー / 2=設定未確定で停止 / 3=骨組みのみ。**2と3を成功と読み替えない。**
+**終了コード**: 0=完了 / 1=実行エラー / 2=設定未確定で停止 / 3=骨組みのみ / **4=実行成功だが品質不採用**。
+**2・3・4を成功と読み替えない。4と1を混同しない**（4は品質、1は実行の失敗）。
 
 ## 現在地
 
-- 実装済み: 設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、foundation bootstrap、Golden Path 9段階の骨組み、**T1 レコード契約validatorと手書きfixture、T2 合成Catalog/Query/GT・family分割・大規模ストリーム処理**。
-- 未実装: 検索・Feature・学習・評価・FailureCase・疑似オンライン・ReleaseBundleの**実処理**（T3〜T8）。骨組みは`implemented: false`を明示する。
-- 段階状態（2026-09-22、小規模CLI pipelineで検証）: `contracts/catalog/judgments=completed` / 他5段階=`skeleton` / `simulation=blocked`（enabled=false）。設定項目は仮置き済み。Feature列定義・simulation確率等の詳細はT5/T7で具体化する。
+- 実装済み: T1〜T8の実処理。設定loader/schema、工程別blocker、成果物store、checksum、原子的run公開、契約validator＋手書きfixture、合成Catalog/Query/完全GT、E5+Qdrant検索、評価・Slice・FailureCase、構造化Feature＋LambdaRank、凍結Gate比較、**疑似オンラインsimulation（版付きpolicy・paired stream・KPI・GT候補）**、**独立評価→ReleaseBundle→active原子切替→rollback**。
+- 段階状態（2026-09-22、CLI pipelineで実測）: 9段階すべて`completed`。小規模データではslice件数不足で`quality=inconclusive`（exit 4）。**採用されていないことを実行失敗と読み替えない。**
+- 品質閾値は凍結値。**acceptedを得るために閾値を下げない**（下げるのはNon-scope）。
 - 依存の制約: **`numpy<2` / Python`<3.13`**（x86_64 mac -> torch 2.2.2 -> numpy<2 -> Python<3.13 の連鎖）。LightGBMは`brew install libomp`が必要。
 - 実装順: [マスタータスク](docs/tasks/03_active/20260921-search-quality-poc-implementation.md)のT1〜T8。
 - 設定済み項目と後続の具体化・検証: [判断・設定台帳](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。

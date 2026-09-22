@@ -19,11 +19,18 @@ failure detection / integrity
 
 eventとKPI契約は05が正本。`parts_sim_v1`、観測窓1800秒、`position_biased_cascade_v1`、paired streamは設定済み。位置バイアス関数、click/conversion/reformulation確率、分布shift条件は本タスクで仮置きを具体化して版付きpolicyへ固定する。event生成・集計は未実装。
 
-## 着手前の確認（2026-09-22整理）
+## 実装（2026-09-22）
 
-- 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
-- 依存: T4・T6待ち。simulation.enabled=falseは未実装による意図的な停止。
-- 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
+`src/parts_search/pipelines/simulation.py`。`parts-search stage simulation --dataset .. --judgments .. --search .. [--split ..] [--release-id ..]`。
+
+- **版付きpolicyを config で固定**（`parts_sim_v1.0.0`）。位置バイアス`1/rank**decay`、click確率（relevant .65 / marginal .30 / irrelevant .03）、conversion .25、reformulation（zero .80 / noClick .45 / afterClick .05）、観測窓1800秒、sessionsPerQuery 4、seed 777。**いずれかがnullなら段階がblockedになる**（loaderのblockersに追加）。
+- **paired random stream**: 乱数の種は`policyVersion|seed|query_id|session_index`だけで、variantを含めない。baselineとcandidateで同じquery・session・乱数を使う（integration testでsession集合の一致を検査）。
+- event: impression（0件でも空itemsで1回）・click（cascadeで最初のclickで離脱）・conversion・reformulation。`event_id`重複は同payloadなら無害、異payloadは`DuplicateEventError`。
+- **観測窓外の遅着は`quarantine.jsonl`へ隔離**しKPIの母集合から外す。これは設計どおりの除外なので比較を止めない。**止めるのは欠陥**（提示外product・孤児interaction・観測窓未完了・failed impression）で、`kpis.json`の`blocking_reasons`に出す。
+- KPI 6種を**分母0はnull**で保持（`_rate`）。`searchSuccessRate` / `ctr` / `zeroResultRate` / `reformulationRate` / `conversionRate` / `wrongFitmentRate`。
+- FailureCase（`simulation_miss`）とGT候補を生成。GT候補は`promoted_to_evaluation_gt: false`固定で、`judgments.promoteImplicitToEvaluation`がtrueなら段階自体を失敗させる。
+
+証跡は本文末尾の検証節。
 
 ## Scope
 

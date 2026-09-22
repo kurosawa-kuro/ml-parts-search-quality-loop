@@ -105,7 +105,7 @@ def build_simulation(
 
     events: dict[str, dict] = {}
     impressions: list[dict] = []
-    quarantined: list[dict] = []
+    late: list[dict] = []
     failures: list[dict] = []
     gt_candidates: list[dict] = []
     for qid, gt in gt_groups(judgments, dm, queries, products):
@@ -214,8 +214,9 @@ def build_simulation(
                 }
                 add_event(events, event)
                 # 観測窓を越えた遅着は結合せず隔離する（05）。KPI の母集合に入れない。
+                # これは**設計どおりの除外**であり、データ欠陥ではない。比較は止めない。
                 if offset > window:
-                    quarantined.append(event)
+                    late.append(event)
                     reformulated = False
             top_label = labels.get(shown[0]) if shown else None
             impressions.append(
@@ -264,6 +265,25 @@ def build_simulation(
 
     if config["judgments"]["promoteImplicitToEvaluation"]:
         raise FoundationError("Implicit feedback must not be promoted into evaluation GT")
+    # 提示外 interaction と孤児 event は**データ欠陥**。これが 1 件でもあれば正式比較を止める。
+    shown_by_impression = {
+        event["impression_id"]: {item["product_id"] for item in event["items"]}
+        for event in events.values()
+        if event["event_type"] == "impression"
+    }
+    orphans = [
+        event
+        for event in events.values()
+        if event["event_type"] != "impression"
+        and (
+            event["impression_id"] not in shown_by_impression
+            or (
+                event["product_id"] is not None
+                and event["product_id"] not in shown_by_impression[event["impression_id"]]
+            )
+        )
+    ]
+    open_windows = [row for row in impressions if not row["window_closed"]]
     joined = [row for row in impressions if row["window_closed"] and row["status"] == "succeeded"]
     non_empty = [row for row in joined if row["items"]]
     failed = [row for row in impressions if row["status"] != "succeeded"]
@@ -283,7 +303,7 @@ def build_simulation(
     check_records("Event", list(events.values()))
     check_records("FailureCase", failures)
     counts = Counter(event["event_type"] for event in events.values())
-    complete = not failed and not quarantined
+    complete = not failed and not orphans and not open_windows
     return {
         "events.jsonl": sorted(events.values(), key=lambda e: (e["event_time"], e["event_id"])),
         "impressions.jsonl": impressions,
@@ -300,7 +320,10 @@ def build_simulation(
                 "joined_impressions": len(joined),
                 "non_empty_impressions": len(non_empty),
                 "failed_impressions": len(failed),
-                "quarantined_events": len(quarantined),
+                # 観測窓外の遅着（設計どおりの除外）と、結合できない欠陥を分けて数える。
+                "late_events_outside_window": len(late),
+                "orphan_events": len(orphans),
+                "open_windows": len(open_windows),
                 "events": dict(counts),
             },
             # 1 件でも失敗・未結合が残れば正式比較は inconclusive（05）。
@@ -309,14 +332,15 @@ def build_simulation(
                 reason
                 for reason, present in (
                     ("failed_impressions", bool(failed)),
-                    ("unjoined_events", bool(quarantined)),
+                    ("out_of_impression_or_orphan_events", bool(orphans)),
+                    ("observation_window_open", bool(open_windows)),
                 )
                 if present
             ],
         },
         "failures.jsonl": failures,
         "gt_candidates.jsonl": gt_candidates,
-        "quarantine.jsonl": quarantined,
+        "quarantine.jsonl": late,
     }, {
         "dataset_digests": dm["metadata"]["set_digests"],
         "dataset": reference(dataset),

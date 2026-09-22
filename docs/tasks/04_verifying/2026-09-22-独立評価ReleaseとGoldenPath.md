@@ -19,11 +19,18 @@ safety / integrity
 
 [リリースRunbook](../../08_release_runbook.md)は手順契約だけでCLI未実装。PoC完了には独立評価でacceptedとなった改善例と、次のExperimentへ戻る証跡が必要。
 
-## 着手前の確認（2026-09-22整理）
+## 実装（2026-09-22）
 
-- 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
-- 依存: T1・T2は完了。T3〜T7の検索・評価・学習・Gate・simulation待ち。
-- 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
+`src/parts_search/pipelines/release.py`。`parts-search stage release --gate <実験> --simulation <baseline> --simulation <candidate>` → `parts-search activate <release>` / `parts-search rollback`。
+
+- **独立評価**: 同じ評価成果物の`holdout` splitで再比較する（tuningのoffline比較とは別のsplit）。gateに記録した入力参照が変わっていたら失敗させる。
+- **online guardrail**: `searchSuccessRate`と`wrongFitmentRate`を`qualityGate.maxRegression`で判定。**分母0（null）は合格にせず`denominator_zero`で落とす**。
+- decision: offline / holdout / simulation comparison_ready / guardrail が全て通ったときだけ`promote`。inconclusiveとrejectを区別して`PromotionDecision`へ保存する。**promoteのときだけ`bundle.json`を書く**。
+- ReleaseBundle: 検索構成・dataset・index・embedding revision・model・FeatureSchema・policy参照・checksumを固定。
+- 切替: `active.json`を同一filesystemの`os.replace`で原子的に差し替え、旧参照を`previous`と`active-history.jsonl`へ残す。`rollback`は旧参照へ戻すだけで成果物は消さない。**旧bundleのmanifest checksumが変わっていたら強制変換せず停止**する。
+- smoke 6段階を`smoke.json`へ保存し、1つでもfalseなら`activate`を拒否する。
+
+証跡は本文末尾の検証節。
 
 ## Scope
 

@@ -72,6 +72,8 @@ def test_contract_covers_the_data_model():
         "Evaluation",
         "FailureCase",
         "PromotionDecision",
+        "Event",
+        "ReleaseBundle",
     }
     assert set(RECORD_NAMES) == expected
 

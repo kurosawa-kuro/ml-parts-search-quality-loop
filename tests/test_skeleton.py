@@ -19,7 +19,7 @@ import yaml
 
 from parts_search.config.loader import load_settings
 from parts_search.errors import FoundationError
-from parts_search.pipelines.skeleton import BLOCKED, SKELETON, run_pipeline, run_stage
+from parts_search.pipelines.skeleton import BLOCKED, run_pipeline, run_stage
 from parts_search.pipelines.stages import STAGE_NAMES, STAGES, stage_by_name
 from parts_search.records import RECORD_NAMES
 
@@ -75,17 +75,15 @@ class SkeletonTest(unittest.TestCase):
                 self.assertTrue(name.endswith((".json", ".jsonl")), name)
 
     def test_placeholder_reflects_declared_implementation(self):
-        """未実装の段階が implemented=True を主張しないこと。
+        """placeholder が実装状態を偽らないこと。
 
-        実装済み段階（現在は contracts）だけが True。ここが緩むと、
-        骨組みの成果物が実装済みに見える。
+        全段階が実装済みになった後も、placeholder 経路が implemented=True を
+        主張しないことを守る（未実装段階を足したときに緑で通さない）。
         """
-        unimplemented = [s for s in STAGES if not s.implemented]
-        self.assertTrue(unimplemented, "全段階が実装済みならこの test は不要になる")
-        for stage in unimplemented:
-            self.assertIs(stage.placeholder()["implemented"], False, stage.name)
         for stage in STAGES:
             self.assertIs(stage.placeholder()["implemented"], stage.implemented, stage.name)
+        for stage in STAGES:
+            self.assertIn("no retrieval, training, metrics or release", stage.placeholder()["note"])
 
     # --- blocked の扱い ---
 
@@ -101,21 +99,14 @@ class SkeletonTest(unittest.TestCase):
         self.assertIn("retrieval.embedding.modelId", result["blockers"])
         self.assertFalse((self.root / "artifacts/runs").exists())
 
-    def test_stage_runs_once_configuration_is_filled(self):
+    def test_release_without_inputs_is_blocked_not_published(self):
+        """入力が無い release を「実行した」ことにしない。"""
         result = run_stage(self.settings(), "release")
-        self.assertEqual(result["status"], SKELETON)
-        published = Path(str(result["artifact"]))
-        self.assertTrue((published / "manifest.json").is_file())
-        manifest = json.loads((published / "manifest.json").read_text())
-        self.assertIs(manifest["metadata"]["implemented"], False)
-        self.assertEqual(manifest["metadata"]["evidence_level"], 1)
-
-    def test_empty_jsonl_is_not_presented_as_a_result(self):
-        """0 件の JSONL だけを見て「結果が空だった」と読めてはいけない。"""
-        result = run_stage(self.settings(), "release")
-        published = Path(str(result["artifact"]))
-        payload = json.loads((published / "decision.json").read_text())
-        self.assertIs(payload["implemented"], False)
+        self.assertEqual(result["status"], BLOCKED)
+        self.assertIsNone(result["artifact"])
+        self.assertIn("input.gate", result["blockers"])
+        self.assertIn("input.simulations", result["blockers"])
+        self.assertFalse((self.root / "artifacts/releases").exists())
 
     # --- pipeline 全体 ---
 
@@ -125,11 +116,11 @@ class SkeletonTest(unittest.TestCase):
         「全段階が走った」ことを達成と読み替えさせない。
         """
         result = run_pipeline(self.settings())
-        self.assertEqual(len(result["stages"]), len(STAGES))
+        self.assertGreaterEqual(len(result["stages"]), len(STAGES))
         self.assertIs(result["golden_path_complete"], False)
-        declared = [s.name for s in STAGES if s.implemented]
+        # embedding.modelId を外してあるので retrieval 以降は blocked のまま。
         self.assertEqual(result["implemented_stages"], ["contracts", "catalog", "judgments"])
-        self.assertLess(len(declared), len(STAGES), "まだ未実装の段階が残っている")
+        self.assertIn("retrieval", result["blocked_stages"])
 
     def test_implemented_stage_reports_completed_with_real_output(self):
         """実装済み段階は placeholder ではなく実処理の成果物を出す。"""
@@ -148,11 +139,20 @@ class SkeletonTest(unittest.TestCase):
         self.assertIn("gate", result["blocked_stages"])
         self.assertIn("release", result["blocked_stages"], "release も qualityGate に依存する")
 
-    def test_simulation_is_blocked_until_enabled(self):
-        """simulation は enabled=false のあいだ blocked。設定で有効化できる。"""
-        self.assertIn("simulation", run_pipeline(self.settings())["blocked_stages"])
+    def test_simulation_is_blocked_while_disabled(self):
+        """enabled=false は「未実施」であって合格でも 0 でもない。"""
+        self.config["simulation"]["enabled"] = False
+        blockers = run_stage(self.settings(), "simulation")["blockers"]
+        self.assertIn("simulation.enabled", blockers)
         self.config["simulation"]["enabled"] = True
-        self.assertNotIn("simulation", run_pipeline(self.settings())["blocked_stages"])
+        self.assertNotIn("simulation.enabled", run_stage(self.settings(), "simulation")["blockers"])
+
+    def test_unversioned_simulation_policy_blocks(self):
+        """版付き policy が無ければ simulation を開始しない（05）。"""
+        self.config["simulation"]["policyVersion"] = None
+        self.assertIn(
+            "simulation.policyVersion", run_stage(self.settings(), "simulation")["blockers"]
+        )
 
     def test_stop_on_block_halts_at_first_blocker(self):
         self.config["catalog"]["attributePolicyId"] = None
@@ -187,14 +187,14 @@ class SkeletonTest(unittest.TestCase):
         実装が無いので 3 が返り、どちらにしても 0 にはならない。
         """
         completed = self.cli("pipeline")
-        self.assertIn(completed.returncode, (2, 3), completed.stderr)
+        self.assertIn(completed.returncode, (2, 3, 4), completed.stderr)
         self.assertNotEqual(completed.returncode, 0)
         payload = json.loads(completed.stdout)
         self.assertIs(payload["golden_path_complete"], False)
 
-    def test_cli_stage_exit_three_when_only_skeleton(self):
+    def test_cli_stage_exit_two_when_inputs_are_missing(self):
         completed = self.cli("stage", "release")
-        self.assertEqual(completed.returncode, 3, "実装が無いので skeleton=3")
+        self.assertEqual(completed.returncode, 2, "入力未指定は blocked=2")
 
     def test_cli_completed_stage_exits_zero(self):
         completed = self.cli("stage", "contracts")

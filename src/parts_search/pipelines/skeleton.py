@@ -203,6 +203,7 @@ def run_pipeline(
                 "artifact": str(artifacts[stage.name]),
                 "reused": True,
                 "blockers": [],
+                "quality": None,
             }
         else:
             inputs = {}
@@ -225,9 +226,7 @@ def run_pipeline(
                     split=settings.config["simulation"]["validationSplit"],
                 )
             if stage.name == "release":
-                inputs.update(
-                    gate=artifacts.get("gate"), simulations=artifacts.get("simulations")
-                )
+                inputs.update(gate=artifacts.get("gate"), simulations=artifacts.get("simulations"))
             variant_settings = settings
             if stage.name == "training":
                 import copy
@@ -291,7 +290,7 @@ def run_pipeline(
     failed = [r["stage"] for r in results if r["status"] == "failed"]
     done = [r["stage"] for r in results if r["status"] == COMPLETED]
     release = next((r for r in results if r["stage"] == "release"), None)
-    quality = release["quality"] if release else None
+    quality = release.get("quality") if release else None
     # Golden Path は release が promote し、切替前 smoke まで通ったときだけ完走とする。
     complete = bool(
         release

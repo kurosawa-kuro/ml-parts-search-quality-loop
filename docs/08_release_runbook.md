@@ -1,6 +1,9 @@
 # 08 リリース Runbook
 
-> 対象はローカル疑似オンラインで使うReleaseBundleの切替。商用環境への配備は対象外。処理・CLIは未実装のため、以下は実装後の運用契約。現状ではリリースを実行できない。
+> 対象はローカル疑似オンラインで使うReleaseBundleの切替。商用環境への配備は対象外。
+> **実装済み（2026-09-22）**: `parts-search stage release --gate <実験> --simulation <baseline> --simulation <candidate>`
+> が独立評価・guardrail・decision・smokeを出し、`parts-search activate <release>` / `parts-search rollback`
+> がactive参照を原子的に切り替える。decisionがpromoteでなければactiveへ昇格しない。
 
 ## リリース前
 
@@ -24,14 +27,16 @@
 
 ## Golden Pathのsmoke
 
-| # | 確認操作（実コマンドは実装時に追加） | 期待する観測 |
+`release`段階が下表を`smoke.json`の6 stageとして実行する（`passed`が1つでもfalseなら切替不可）。
+
+| # | 確認操作（`smoke.json`のstage名） | 期待する観測 |
 |---|---|---|
-| 1 | 入力manifestと固定smokeデータを検査 | catalog・GT・split・policyが復元できる |
-| 2 | 正常query・正常0件queryを検索し評価 | 新bundleの結果、全outcome、有限metricと規定のnull |
-| 3 | developmentのimpression・click・失敗例を生成 | event結合が成立しFailureCaseを取得 |
-| 4 | 同梱の小規模学習fixtureでFeature・model互換を確認 | labelを推論へ漏らさず、再学習成果物を別runへ保存 |
-| 5 | baselineとの比較・採否成果物を再読込 | signature・指標・decisionが整合する |
-| 6 | 次experimentを作るdry-run | 親実験・FailureCase・新releaseの関係を保存できる |
+| 1 | `inputs_restorable` | gate成果物が検証でき、holdoutがtrain/tuningと重ならない |
+| 2 | `search_and_evaluation` | 評価statusがcomplete/no_relevantで、metricがnullなのはcompleteでないqueryだけ |
+| 3 | `simulation_join` | impressionが結合済みで、**提示外のproductを持つinteractionが無い**。FailureCase件数も併記する（0件を不合格にしない） |
+| 4 | `model_compatibility` | candidate runのmanifest checksumが読める |
+| 5 | `comparison_reload` | 保存済みdecisionのpolicy checksumが現在のGatePolicyと一致する |
+| 6 | `next_experiment_dry_run` | 親experiment・FailureCase・release_idの関係を保存できる |
 
 リリース前のE2Eは6段階を実行する。切替後は1〜3と5〜6を実行し、4はモデルschema・checksum確認を行う。smokeが学習用に使う小規模fixtureをholdoutへ混ぜない。smoke結果と正式品質評価は別runとして扱う。
 

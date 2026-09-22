@@ -1,10 +1,14 @@
 # Experiment比較と品質Gateを実装する
 
-## 現在地（2026-09-22）
+## 現在地（2026-09-22 完了）
 
-進行中。GatePolicy checksumを学習前に凍結し、同一CandidateSet・signature・分母・Slice・seed [11,22,33]を検査するoffline比較、query別差分、Experiment/PromotionDecision保存を実装。独立正常fixtureも追加済み。
+GatePolicy checksumを学習前に凍結し、同一CandidateSet・signature・分母・Slice・seed [11,22,33]を検査するoffline比較、query別差分、Experiment/PromotionDecision保存を実装。独立正常fixtureも追加済み。
 
-残り: retry_of/parent_experiment_idのCLI接続、品質不採用と実行失敗の終了コード分離。現在stage gateのexit 0は比較成果物の保存成功を示す。正式昇格はT7/T8の証跡がないためinconclusive。offline_verdictを別途保存する。
+残件も実装済み:
+
+- `--parent-experiment` / `--retry-of` をCLIへ接続し、experiment.jsonとdecision.jsonへ系譜を保存する。`--retry-of`だけを渡した場合は元実験を親として引き継ぐ（既存runは変更しない）。
+- **品質不採用と実行失敗の終了コードを分離**した。`4`=実行成功だが品質が採用でない、`1`=実行失敗、`2`=設定未確定、`3`=骨組みのみ。段階結果は`quality`フィールドで判定を別軸に持つ。
+- offline_verdictは従来どおり別途保存し、正式昇格判定はT8の`release`段階が行う（gateは独立評価・simulationの証跡が無い限りinconclusiveのまま）。
 
 ## Goal
 

@@ -234,10 +234,26 @@ def _smoke(
             and metrics_finite_or_null,
         }
     )
+    # 「FailureCase が出ていること」を健全性の条件にしない（出ない方が良い結果もある）。
+    # ここで見るのは **結合が成立していること**: interaction が提示商品にだけ付いているか。
+    events = list(iter_jsonl(simulation / "events.jsonl"))
+    shown = {
+        event["impression_id"]: {item["product_id"] for item in event["items"]}
+        for event in events
+        if event["event_type"] == "impression"
+    }
+    joined = all(
+        event["impression_id"] in shown
+        and (event["product_id"] is None or event["product_id"] in shown[event["impression_id"]])
+        for event in events
+    )
     checks.append(
         {
             "stage": "simulation_join",
-            "passed": kpis["denominators"]["joined_impressions"] > 0 and bool(failures),
+            "passed": kpis["denominators"]["joined_impressions"] > 0
+            and joined
+            and kpis["comparison_ready"],
+            "failure_cases": len(failures),
         }
     )
     checks.append(

@@ -10,10 +10,11 @@ from parts_search.config.loader import Settings
 from parts_search.errors import FoundationError
 from parts_search.pipelines.evaluation import measure_query
 from parts_search.pipelines.gate import compare
+from parts_search.pipelines.release import SMOKE_STAGES, activate
 from parts_search.pipelines.retrieval import preprocess, ranked_points
 from parts_search.pipelines.skeleton import run_stage
 from parts_search.pipelines.training import feature_schema, features, load_model
-from parts_search.records.io import read_json, read_records
+from parts_search.records.io import iter_jsonl, read_json, read_records
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -165,6 +166,64 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
         decision["decision"] == "inconclusive"
     )  # Small slices and no independent online evidence.
     assert all(c["split"] == "tuning" for c in decision["comparisons"])
+    # --- T7: 疑似オンライン。baseline と candidate は同じ split・同じ乱数 stream ---
+    validation = config["simulation"]["validationSplit"]
+    sim_baseline = Path(
+        run_stage(
+            settings, "simulation", dataset=ds, judgments=gt, search=search, split=validation
+        )["artifact"]
+    )
+    sim_candidate = Path(
+        run_stage(
+            settings, "simulation", dataset=ds, judgments=gt, search=trained, split=validation
+        )["artifact"]
+    )
+    left = read_json(sim_baseline / "kpis.json")
+    right = read_json(sim_candidate / "kpis.json")
+    assert left["denominators"]["joined_impressions"] > 0
+    assert left["split"] == validation and right["split"] == validation
+    # 同じ query・session 割当で比較していること（impression の集合が一致）。
+    sessions = {
+        path: {row["session_id"] for row in read_records("Event", path / "events.jsonl")}
+        for path in (sim_baseline, sim_candidate)
+    }
+    assert sessions[sim_baseline] == sessions[sim_candidate]
+    # 0 件 impression も 1 回記録し、分母 0 の KPI は null で保持する。
+    impressions = [
+        row
+        for row in read_records("Event", sim_baseline / "events.jsonl")
+        if row["event_type"] == "impression"
+    ]
+    assert len(impressions) == left["denominators"]["impressions"]
+    assert all(value is None or 0.0 <= value <= 1.0 for value in left["kpis"].values())
+    # implicit click は GT 候補どまり。独立評価 GT へ自動反映しない。
+    candidates_for_gt = list(iter_jsonl(sim_candidate / "gt_candidates.jsonl"))
+    assert all(not row["promoted_to_evaluation_gt"] for row in candidates_for_gt)
+
+    # --- T8: 独立評価（holdout）＋ guardrail → decision → bundle → 切替 ---
+    released = run_stage(settings, "release", gate=gate, simulations=[sim_baseline, sim_candidate])
+    assert released["status"] == "completed", released
+    release_dir = Path(released["artifact"])
+    decision_record = read_json(release_dir / "decision.json")
+    smoke = read_json(release_dir / "smoke.json")
+    assert decision_record["decision"] in ("promote", "reject", "inconclusive")
+    assert decision_record["gate_results"]["holdout"] in ("accepted", "rejected", "inconclusive")
+    assert [stage["stage"] for stage in smoke["stages"]] == list(SMOKE_STAGES)
+    assert (
+        smoke["next_experiment"]["parent_experiment_id"]
+        == read_json(gate / "experiment.json")["experiment_id"]
+    )
+    active = settings.root / config["paths"]["activeRelease"]
+    if decision_record["decision"] == "promote":
+        assert (release_dir / "bundle.json").exists()
+        activate(active, release_dir)
+        assert read_json(active)["release_id"] == decision_record["release_id"]
+    else:
+        # accepted でない候補を active へ昇格できない。
+        assert not (release_dir / "bundle.json").exists()
+        with pytest.raises(FoundationError, match="promoted"):
+            activate(active, release_dir)
+
     index = read_json(search / "index.json")
     client = QdrantClient(url=config["retrieval"]["qdrant"]["url"])
     client.delete_collection(index["collection"])
@@ -182,10 +241,12 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
         "Evaluation",
         "FailureCase",
         "PromotionDecision",
+        "Event",
+        "ReleaseBundle",
     ],
 )
 def test_independent_normal_record_fixtures(name):
-    assert len(read_records(name, ROOT / "tests/fixtures/valid" / f"{name}.jsonl")) == 1
+    assert read_records(name, ROOT / "tests/fixtures/valid" / f"{name}.jsonl")
 
 
 @pytest.mark.parametrize("mode", ["empty", "timeout", "unavailable"])

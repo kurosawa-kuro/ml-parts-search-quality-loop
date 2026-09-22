@@ -1,7 +1,7 @@
 # Parts Search Quality Loop
 
 多言語の部品検索で、失敗検知・GT更新・再学習・独立評価をつなぐPoC。
-現在は **T1〜T5とT6のoffline比較** を実装済み。固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較がつながる。疑似オンライン・独立評価・ReleaseBundleは未実装。
+**T1〜T8を実装済み（2026-09-22）。Golden Path 9段階が実処理で通る。** 固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較、疑似オンラインsimulation（版付きpolicy・paired stream・KPI）、独立holdout評価とonline guardrail、ReleaseBundleの原子的切替とrollbackがつながる。
 
 ## 現在地と実装順序
 
@@ -15,11 +15,20 @@
 | T3 | Qdrant Vector BaselineとSearchRun | 実装済み |
 | T4 | オフライン評価、Slice、FailureCase | 実装済み |
 | T5 | 構造化FeatureとLightGBM LambdaRank | 実装済み |
-| T6 | Experiment比較と品質Gate | offline比較実装済み・残件あり |
-| T7 | 疑似オンラインFeedback Loop | backlog |
-| T8 | 独立評価、Release、rollback、Golden Path E2E | backlog |
+| T6 | Experiment比較と品質Gate | 実装済み（系譜・終了コード分離まで） |
+| T7 | 疑似オンラインFeedback Loop | 実装済み（通し実行の証跡待ち） |
+| T8 | 独立評価、Release、rollback、Golden Path E2E | 実装済み（promote経路の証跡待ち） |
 
-商材別GTは05のT2契約、Embedding・FeatureSchema・品質閾値・SimulationPolicyの仮置き値はconfigと判断記録を参照する。設定が揃ったことを正式評価の合格とは扱わない。
+商材別GTは05のT2契約、Embedding・FeatureSchema・品質閾値・SimulationPolicyの値はconfigと判断記録を参照する。設定が揃ったことを正式評価の合格とは扱わない。
+
+**終了コード**: 0=完了 / 1=実行エラー / 2=設定未確定 / 3=骨組みのみ / **4=実行成功だが品質不採用**。
+4は実行失敗ではない。小規模データでは`minSliceQueries`を満たさず4になる。**採用を得るために閾値を下げない。**
+
+```bash
+make pipeline                                   # 9段階を依存順に実行
+make activate RELEASE=artifacts/releases/<id>   # promoteしたreleaseをactiveへ
+make rollback                                   # 直前のactiveへ戻す
+```
 
 ## セットアップと起動
 
