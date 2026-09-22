@@ -44,6 +44,23 @@ trainer が `deterministic: true`・bagging/feature subsample 無しのため、
 現在の trainer 構成では `no_metric_variance_across_seeds` が正しい表示になる。
 **閾値や trainer 構成は変えていない**（変えれば品質そのものが動くため、別判断）。
 
+## 規定スケール（要件 §範囲 10,000〜50,000 SKU）での通し実行
+
+2026-09-22 12:57 完了。**10,000 SKU / 1,000 family / 2,000 Query / 完全GT 2,000万行**、
+所要 **89 分**（11:28→12:57）。
+
+```
+exit 0 / golden_path_complete: true / decision: promote / smoke: passed
+offline accepted・holdout accepted（300 query）・holdout NDCG@10 +0.2589
+guardrail searchSuccessRate +0.21 / wrongFitmentRate -0.21（ともに合格）
+simulation impressions 800
+```
+
+**1回目は retrieval で失敗した（exit 1）。** `E5Encoder` がカタログ全件を 1 リクエストで
+送る一方、worker 応答の待ちが 180 秒固定で、10,000 SKU では必ず超過していた
+（`error_code: timeout` / `dimension: null`）。**規模を上げた時点で必ず落ちる設計欠陥**で
+config では回避できない。chunk（既定 256 件）ごとの往復へ変更し、退行テストを追加した。
+
 ## 小規模実行との対比
 
 120 SKU / 40 family では `minSliceQueries=30` を満たさず **exit 4 / inconclusive**。
