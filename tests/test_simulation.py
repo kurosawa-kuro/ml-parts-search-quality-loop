@@ -14,6 +14,7 @@ from parts_search.pipelines.simulation import (
     DuplicateEventError,
     _rate,
     add_event,
+    join_defects,
     policy_of,
     stream,
 )
@@ -45,6 +46,54 @@ def test_probabilities_must_be_set_before_simulating():
     partial["simulation"]["clickProbability"]["relevant"] = None
     with pytest.raises(FoundationError, match="click probabilities"):
         policy_of(partial)
+
+
+def test_implicit_feedback_must_not_be_promoted_into_evaluation_gt():
+    promoting = config()
+    promoting["judgments"]["promoteImplicitToEvaluation"] = True
+    with pytest.raises(FoundationError, match="Implicit feedback"):
+        policy_of(promoting)
+
+
+# --- 結合の欠陥 ---
+
+
+def _impression(items: list[str]) -> dict:
+    return {
+        "event_id": "imp",
+        "event_type": "impression",
+        "impression_id": "imp-1",
+        "items": [{"rank": i + 1, "product_id": pid} for i, pid in enumerate(items)],
+        "product_id": None,
+    }
+
+
+def test_out_of_impression_click_and_orphan_event_are_defects():
+    shown = _impression(["p1", "p2"])
+    inside = {
+        "event_id": "c1",
+        "event_type": "click",
+        "impression_id": "imp-1",
+        "items": [],
+        "product_id": "p2",
+    }
+    outside = {**inside, "event_id": "c2", "product_id": "p9"}
+    orphan = {**inside, "event_id": "c3", "impression_id": "imp-missing"}
+    assert join_defects([shown, inside]) == []
+    assert [e["event_id"] for e in join_defects([shown, inside, outside, orphan])] == ["c2", "c3"]
+
+
+def test_zero_result_impression_is_kept_and_has_no_interactions():
+    empty = _impression([])
+    assert join_defects([empty]) == []
+    click = {
+        "event_id": "c1",
+        "event_type": "click",
+        "impression_id": "imp-1",
+        "items": [],
+        "product_id": "p1",
+    }
+    assert join_defects([empty, click]) == [click]
 
 
 # --- paired random stream ---

@@ -196,6 +196,33 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
     ]
     assert len(impressions) == left["denominators"]["impressions"]
     assert all(value is None or 0.0 <= value <= 1.0 for value in left["kpis"].values())
+    # 遅着（観測窓外）は隔離され、KPI の母集合にも reformulation にも入らない。
+    for path, payload in ((sim_baseline, left), (sim_candidate, right)):
+        late = list(iter_jsonl(path / "quarantine.jsonl"))
+        assert payload["denominators"]["late_events_outside_window"] == len(late)
+        assert payload["denominators"]["orphan_events"] == 0
+        assert payload["comparison_ready"] is True
+        events = read_records("Event", path / "events.jsonl")
+        joined_reformulations = sum(
+            1
+            for e in events
+            if e["event_type"] == "reformulation"
+            and e["event_id"] not in {r["event_id"] for r in late}
+        )
+        expected = (
+            payload["kpis"]["reformulationRate"] * payload["denominators"]["joined_impressions"]
+        )
+        assert joined_reformulations == pytest.approx(expected)
+    # 0 件 impression は 1 回だけ数える（zero result の二重計上をしない）。
+    empty_impressions = sum(
+        1
+        for e in read_records("Event", sim_baseline / "events.jsonl")
+        if e["event_type"] == "impression" and not e["items"]
+    )
+    assert left["kpis"]["zeroResultRate"] * left["denominators"]["joined_impressions"] == (
+        pytest.approx(empty_impressions)
+    )
+
     # implicit click は GT 候補どまり。独立評価 GT へ自動反映しない。
     candidates_for_gt = list(iter_jsonl(sim_candidate / "gt_candidates.jsonl"))
     assert all(not row["promoted_to_evaluation_gt"] for row in candidates_for_gt)

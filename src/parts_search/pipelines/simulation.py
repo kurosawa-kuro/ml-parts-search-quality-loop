@@ -48,7 +48,34 @@ def policy_of(config: dict) -> dict:
         raise FoundationError("Simulation click probabilities are not set")
     if any(value is None for value in policy["reformulationProbability"].values()):
         raise FoundationError("Simulation reformulation probabilities are not set")
+    if config["judgments"]["promoteImplicitToEvaluation"]:
+        # implicit feedback は独立評価 GT へ自動反映しない（05・要件 AC）。
+        raise FoundationError("Implicit feedback must not be promoted into evaluation GT")
     return policy
+
+
+def join_defects(events: list[dict]) -> list[dict]:
+    """提示外 interaction と孤児 event を返す。**これがあれば正式比較を止める。**
+
+    観測窓外の遅着（隔離済み）とは別物。こちらはデータ欠陥。
+    """
+    shown = {
+        event["impression_id"]: {item["product_id"] for item in event["items"]}
+        for event in events
+        if event["event_type"] == "impression"
+    }
+    return [
+        event
+        for event in events
+        if event["event_type"] != "impression"
+        and (
+            event["impression_id"] not in shown
+            or (
+                event["product_id"] is not None
+                and event["product_id"] not in shown[event["impression_id"]]
+            )
+        )
+    ]
 
 
 def stream(policy: dict, query_id: str, session_index: int) -> list[float]:
@@ -265,24 +292,7 @@ def build_simulation(
 
     if config["judgments"]["promoteImplicitToEvaluation"]:
         raise FoundationError("Implicit feedback must not be promoted into evaluation GT")
-    # 提示外 interaction と孤児 event は**データ欠陥**。これが 1 件でもあれば正式比較を止める。
-    shown_by_impression = {
-        event["impression_id"]: {item["product_id"] for item in event["items"]}
-        for event in events.values()
-        if event["event_type"] == "impression"
-    }
-    orphans = [
-        event
-        for event in events.values()
-        if event["event_type"] != "impression"
-        and (
-            event["impression_id"] not in shown_by_impression
-            or (
-                event["product_id"] is not None
-                and event["product_id"] not in shown_by_impression[event["impression_id"]]
-            )
-        )
-    ]
+    orphans = join_defects(list(events.values()))
     open_windows = [row for row in impressions if not row["window_closed"]]
     joined = [row for row in impressions if row["window_closed"] and row["status"] == "succeeded"]
     non_empty = [row for row in joined if row["items"]]
