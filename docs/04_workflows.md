@@ -1,6 +1,6 @@
 # 04 ワークフロー
 
-> T1〜T5およびT6のoffline比較を実装済み。7段階に実処理あり。simulation・releaseは未実装。
+> **T1〜T8を実装済み（2026-09-22）。9段階すべてに実処理がある。** 1,500 SKU規模の通し実行で `exit 0 / decision: promote / activate→rollback` まで実測済み。
 
 ## 実行できるコマンド
 
@@ -47,8 +47,10 @@ uv run --locked parts-search stage retrieval
 | 1 | 入力・実行エラー、または`config-check`で未設定あり |
 | 2 | **設定・入力不足で段階が止まった**（blocked） |
 | 3 | **未実装段階が残る**（一部完了していても全体は未完了） |
+| 4 | **実行は成功したが品質が採用に至らない**（rejected / inconclusive） |
 
-`pipeline`が0を返すのは全段階の実装が入ったときだけ。**2と3を成功と読み替えない。** ログはstderr、JSONはstdoutへ出るので`parts-search pipeline | jq`が使える。
+`pipeline`が0を返すのは release が promote し smoke まで通ったときだけ。
+**2・3・4を成功と読み替えない。4と1を混同しない**（4は品質、1は実行の失敗）。 ログはstderr、JSONはstdoutへ出るので`parts-search pipeline | jq`が使える。
 
 ```bash
 uv run --locked parts-search verify-artifact artifacts/runs/<run_id>
@@ -114,6 +116,6 @@ uv run --locked parts-search verify-artifact artifacts/judgments/<run_id>
 uv run --locked parts-search pipeline --dataset artifacts/datasets/<id> --judgments artifacts/judgments/<id> --stop-on-block
 ```
 
-検索→baseline評価→train splitで3 seed学習→candidate評価→offline比較まで実行する。simulation未実装のため最終exit 2、Golden Path未完了となる。GTはストリームで扱うが各評価/学習で読み直すため、大規模データでは時間がかかる。120 SKU・40 familyの接続検証は `make test-all`。E5はキャッシュ優先の専用プロセスで実行し、Intel MacのOpenMP競合を回避する。
+検索→baseline評価→train splitで3 seed学習→candidate評価→offline比較→疑似オンラインsimulation（baseline / candidate）→独立holdout評価とguardrail→decisionまで実行する。小規模データではslice件数不足で最終 exit 4（品質不採用）となり、Golden Pathは未完了のままになる。GTはストリームで扱うが各評価/学習で読み直すため、大規模データでは時間がかかる。120 SKU・40 familyの接続検証は `make test-all`。E5はキャッシュ優先の専用プロセスで実行し、Intel MacのOpenMP競合を回避する。
 
 `stage retrieval --dataset ...`、`stage evaluation --dataset ... --judgments ... --search ...`、`stage training --dataset ... --judgments ... --search ...`、`stage gate --baseline ... --candidate-evaluation ...`で個別実行できる。candidate-evaluationはseedごとに繰り返す。gateのexit 0は成果物保存成功であり採用合格ではない。decision.jsonのoffline_verdictと正式decisionを区別する。

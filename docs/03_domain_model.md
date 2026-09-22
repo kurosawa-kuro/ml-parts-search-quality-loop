@@ -1,6 +1,6 @@
 # 03 ドメインモデル
 
-> 設計契約v1。設定・foundation runは実装済み。以下の検索・学習ドメインは未実装。参照実装の観測と採否理由は [レビュー](./reference-implementation-review.md)。物理項目は [05](./05_data_model.md) を正本とする。
+> 設計契約v1。**T1〜T8まで実装済み（2026-09-22）**で、検索・学習・評価・疑似オンライン・Releaseのドメインは実処理が通っている。参照実装の観測と採否理由は [レビュー](./reference-implementation-review.md)。物理項目は [05](./05_data_model.md) を正本とする。
 
 ## 用語と関係
 

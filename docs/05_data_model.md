@@ -1,6 +1,6 @@
 # 05 データモデル
 
-> 設計契約v1。設定schema、foundation保存・検証、T1レコードvalidator、T2合成Catalog/Query/GTとfamily分割を実装済み。検索・学習・指標以降は未実装。根拠は [参照レビュー](./reference-implementation-review.md)。
+> 設計契約v1。**T1〜T8まで実装済み（2026-09-22）**。設定schema、foundation保存・検証、レコードvalidator、合成Catalog/Query/GT、検索・学習・指標・疑似オンラインevent/KPI・ReleaseBundleが実処理で通る。根拠は [参照レビュー](./reference-implementation-review.md)。
 
 ## 保存方式と識別
 
@@ -177,4 +177,5 @@ patchの自動保存・完全なコード復元は未実装であり、再現実
 - `parts_e5_v1`: NFKC、ハイフン統一、型番英字大文字、query/passage prefix。JA/EN商品文を結合し固定revision E5で正規化vector化する。exact cosine検索、同点はproduct_id昇順。index_idはcatalog checksumとembedding設定に依存し、実collectionはrunごとに独立する。
 - `parts_features_v1`: vector_score, model_exact, category_exact, diameter_delta, length_delta, material_exact, standard_exact, usage_exactの8列。寸法差はmm、条件rangeは中点との差。欠損はJSON null＋missing_mask、LightGBM入力ではNaN。列順・default・変換版・checksumを保存し再読込時に照合する。
 - 学習labelはtrain splitのみ使用。GT rule_idやlabelを推論Featureに含めない。ModelBundleはモデル、FeatureSchema、label_gainと入力checksumへ紐付く。
-- 比較signatureはdataset/GT/metric/simulation設定に依存。candidate checksum一致とseed [11,22,33]を追加検査。正式decisionは独立holdout/simulation未実装の間inconclusive、offline_verdictを別途保持する。
+- 比較signatureはdataset/GT/metric/simulation設定に依存。candidate checksum一致とseed [11,22,33]を追加検査。gateはoffline_verdictだけを確定させ、**正式decisionはrelease段階（独立holdout＋simulation guardrail）で確定**する。gate単体のdecisionはinconclusiveのままにする。
+- seed反復は**指標の分散を示すとは限らない**。gateは`seed_metric_spread`と`repetition_signal`を出し、trainerが決定的なら`no_metric_variance_across_seeds`と明示する。

@@ -40,7 +40,7 @@ activate→rollbackまで実測。証跡は各taskの検証節。
 - [x] promoteに到達する規模での通し実行（1,500 SKU / 700 family、exit 0・decision=promote）。
 - [x] foundation CLIとMakefile、設定・成果物の実テストを接続。
 - [x] 各taskのML工程CLI、07の品質テスト、08のsmoke（`release`段階の6 stage）を実装。
-- [ ] 01〜08の設計契約v1に対する実装確認と差分反映。
+- [x] 01〜08の設計契約v1に対する実装確認と差分反映（03/04/05/06/08の「未実装」記述と終了コード表を実装に同期）。
 
 ## Acceptance Criteria
 
