@@ -326,3 +326,23 @@ def test_retrieval_failure_is_not_successful_empty(tmp_path, mode):
         )
         assert row["attempt"] == (3 if mode == "timeout" else 1)
     assert metadata["failed_queries"] == (0 if mode == "empty" else 40)
+
+
+def test_catalog_encoding_is_chunked_so_one_exchange_cannot_time_out():
+    """1 往復の応答待ちは 180 秒固定。全件を 1 回で投げると規模で必ず落ちる。"""
+    from parts_search.pipelines.retrieval import E5Encoder
+
+    encoder = object.__new__(E5Encoder)
+    seen: list[int] = []
+
+    def fake_exchange(request):
+        seen.append(len(request["texts"]))
+        return [[0.0, 1.0] for _ in request["texts"]]
+
+    encoder._exchange = fake_exchange
+    vectors = encoder.encode([f"p-{i}" for i in range(1000)], "passage", chunk=256)
+    assert len(vectors) == 1000
+    assert seen == [256, 256, 256, 232]
+    assert max(seen) <= 256
+    with pytest.raises(FoundationError, match="chunk size"):
+        encoder.encode(["a"], "passage", chunk=0)

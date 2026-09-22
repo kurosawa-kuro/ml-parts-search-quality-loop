@@ -76,8 +76,21 @@ class E5Encoder:
             raise FoundationError("Embedding worker exited")
         return json.loads(line)
 
-    def encode(self, texts, kind):
-        return self._exchange({"texts": texts, "kind": kind})
+    def encode(self, texts, kind, chunk: int = 256):
+        """Encode in bounded chunks.
+
+        1 リクエストの応答待ちは 180 秒固定なので、カタログ全件を 1 回で投げると
+        **規模が上がった時点で必ず timeout する**（10,000 SKU で実測）。
+        chunk ごとに往復し、待ち時間とメモリを件数から切り離す。
+        """
+        if chunk <= 0:
+            raise FoundationError("Embedding chunk size must be positive")
+        vectors: list = []
+        for start in range(0, len(texts), chunk):
+            vectors.extend(self._exchange({"texts": texts[start : start + chunk], "kind": kind}))
+            if len(texts) > chunk:
+                logger().info("embedding %s=%d/%d", kind, len(vectors), len(texts))
+        return vectors
 
     def close(self):
         import subprocess
