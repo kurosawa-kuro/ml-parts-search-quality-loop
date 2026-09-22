@@ -94,3 +94,15 @@ _まだ判断は記録されていません。`log-decision` が末尾に追記�
   正解ID・rule IDを検索入力へ入れない。
 - 調整条件: 実商品の適合規約や分布を導入する際は新policyとして固定し、同じ版の意味を
   後付けで変更しない。T3以降の品質改善効果は今回の生成完了とは別に検証する。
+
+## 2026-09-22 seed 反復を「頑健性の証拠」と表示しない
+
+- 判断: gate が `seed_metric_spread` と `repetition_signal` を出力する。現在の trainer 構成
+  （`deterministic: true`・bagging/feature subsample 無し）では seed が指標を動かさないため、
+  `no_metric_variance_across_seeds` と明示する。
+- 根拠: 実測で seed [11,22,33] の model checksum は異なるのに NDCG@10 が小数9桁まで一致した。
+  「3 seed 通った」を分散の小ささと読むと誤る。反証可能な形で事実を出す方を選ぶ。
+- 非対象: trainer へ乱択（bagging 等）を入れて分散を作ること。品質そのものが動くため別判断。
+  品質閾値も変更しない。
+- 調整条件: trainer 構成に乱択を入れる判断をしたときは、repetition の意味を再定義してから
+  `repetitionSeeds` の扱いを決める。

@@ -124,6 +124,22 @@ def build_gate(
         comparisons.append({"seed": seed, "evaluation_id": c["evaluation_id"], **comparison})
         refs.append(reference(path))
     complete = sorted(seeds) == sorted(policy["repetitionSeeds"]) and len(seeds) == len(set(seeds))
+    # seed 反復を「頑健性の証拠」と読み違えさせない。指標が seed 間で動かないなら、
+    # それは分散が小さいのではなく **trainer が決定的で seed が効いていない**。
+    spread = {
+        metric: (
+            max(c["candidate"]["metrics"][metric] for c in comparisons)
+            - min(c["candidate"]["metrics"][metric] for c in comparisons)
+        )
+        if comparisons and all(c["candidate"]["metrics"][metric] is not None for c in comparisons)
+        else None
+        for metric in METRICS
+    }
+    repetition_signal = (
+        "no_metric_variance_across_seeds"
+        if comparisons and all(value == 0 for value in spread.values() if value is not None)
+        else "metrics_vary_across_seeds"
+    )
     offline = (
         "inconclusive"
         if not complete or any(c["verdict"] == "inconclusive" for c in comparisons)
@@ -143,6 +159,8 @@ def build_gate(
         "candidates": refs,
         "comparisons": comparisons,
         "repetition_complete": complete,
+        "seed_metric_spread": spread,
+        "repetition_signal": repetition_signal,
         "offline_verdict": offline,
         "decision": "inconclusive",
         "reasons": ["independent_holdout_and_simulation_required"],
@@ -178,7 +196,11 @@ def build_gate(
         "policy_id": policy["policyId"],
         "comparison": {"repetitions": comparisons},
         "denominators": {"repetitions": len(comparisons)},
-        "gate_results": {"offline": offline, "repetition_complete": complete},
+        "gate_results": {
+            "offline": offline,
+            "repetition_complete": complete,
+            "repetition_signal": repetition_signal,
+        },
         "decision": "inconclusive",
         "reason": "Independent holdout and simulation required",
         "release_id": None,

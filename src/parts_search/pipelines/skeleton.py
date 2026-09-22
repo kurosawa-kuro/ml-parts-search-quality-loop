@@ -283,6 +283,9 @@ def run_pipeline(
                     search=Path(trained["artifact"]),
                 )
                 evaluation_paths.append(Path(evaluated["artifact"]))
+                if trained is not result:
+                    results.append({**trained, "seed": seed})
+                results.append({**evaluated, "seed": seed})
             artifacts["candidate_evaluations"] = evaluation_paths
         if result["status"] == "failed" or (stop_on_block and result["status"] == BLOCKED):
             break
