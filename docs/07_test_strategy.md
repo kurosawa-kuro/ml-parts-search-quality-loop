@@ -20,7 +20,7 @@ pytestを選ぶ理由は様式ではなく契約である。本文書は「選�
 
 `--strict-markers`により綴り違いのmarkerは静かに無視されず失敗する。marker分離が実際に効いていること自体を`tests/test_tooling.py`が検査する（設定を書いただけでは保証にならない）。
 
-検証範囲: YAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行・Golden Path骨組みの段階定義と終了コード・パッケージレイアウトの退行。Ruffで整形とlint、uv buildで配布物を検証する。**実Qdrant・学習・指標・ReleaseBundleのテストを通したという意味ではない**（`make test-all`は現在T3未実装で失敗する。これが正しい状態）。
+検証範囲: YAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行・Golden Path骨組みの段階定義と終了コード・パッケージレイアウトの退行。Ruffで整形とlint、uv buildで配布物を検証する。`make test-all`は実ローカルQdrant・固定E5・指標手計算・3 seed学習・モデル再読込・offline比較を含む。ReleaseBundleと大規模ML通し検証は未実施。
 
 ## 実装時のテスト契約
 

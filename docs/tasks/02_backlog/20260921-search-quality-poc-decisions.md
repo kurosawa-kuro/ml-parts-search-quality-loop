@@ -1,5 +1,9 @@
 # 検索品質PoCの残る選定・設定
 
+## 現状追記（2026-09-22、T3〜T6接続）
+
+Embedding前処理/Qdrant adapter・8列FeatureSchema・ir_measures評価・3 seed offline比較を実装済み。詳細は05の実装契約と実装マスターを参照。以下は設定決定時点の履歴を含む。simulation詳細・独立評価・releaseは残る。
+
 ## Goal
 
 [参照実装レビュー](../../reference-implementation-review.md)後の未決事項を確定し、01〜08へ反映する。ID・保存形式・GT優先順位・分割・指標・event・採否状態は設計契約v1として具体化済み。以前の一覧をそのまま未決扱いしない。

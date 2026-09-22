@@ -1,5 +1,9 @@
 # 構造化FeatureとLambdaRankを実装する
 
+## 現在地（2026-09-22）
+
+完了。8列のFeatureSchema（型番・カテゴリ・寸法差・材質・規格・用途・vector score）、欠損mask、train splitだけのLambdaRank学習、保存モデルの再読込rerankを実装。schema不整合拒否と再読込score一致、3 seedを検証。 T1から引き継いだ独立正常fixtureも追加済み。証跡は `artifacts/loop-verification.json` と `tests/test_search_loop.py`。大規模10,000 SKUの検索・学習通し検証は未実施。
+
 ## Goal
 
 検索候補へ部品固有の一致Featureを付与し、LightGBM LambdaRankの学習・推論を同じFeatureSchemaで再現できるようにする。
@@ -19,7 +23,7 @@ integrity / failure detection
 
 Feature候補とlabel_gain `[0,0,1,3,7]` は02・05に定義済み。`parts_features_v1`のIDとLightGBM依存は設定済み。列順・型・default/null・変換版・checksum・数値許容差は本タスクで具体化して凍結する。依存の単体学習実測は、Feature生成・ModelBundle実装の完了を意味しない。
 
-## 着手前の確認（2026-09-22整理）
+## 着手前の記録（履歴）
 
 - 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
 - 依存: T1・T2は完了。T3のCandidateSet待ち。
@@ -63,3 +67,10 @@ Feature候補とlabel_gain `[0,0,1,3,7]` は02・05に定義済み。`parts_feat
 
 - Feature追加に業務上の優先順位やGT規則そのものを埋め込む必要があるとき。
 - 有効な順位差のある学習集合を作れないとき。
+
+## 一括検証結果（2026-09-22）
+
+- `uv run --locked pytest -m ''`: 131 passed（29.64秒、実サービスを含む）。
+- `make lint build`: 成功。
+- pipeline入口: 120 SKU・40 family・80 Query、3 seedの検索→評価→学習→比較を21.16秒で実行し、全runのchecksumを検査。
+- 証跡: `artifacts/loop-verification.json`、実体は`artifacts/loop-smoke/`。小規模tuning NDCG差+0.256781、Recall差0。Slice件数不足でofflineはinconclusive。正式採用・Release合格は宣言しない。

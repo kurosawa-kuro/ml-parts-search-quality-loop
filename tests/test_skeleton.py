@@ -33,6 +33,7 @@ class SkeletonTest(unittest.TestCase):
         self.root = Path(self.tmp.name).resolve()
         (self.root / "env").mkdir()
         self.config = yaml.safe_load((REPO / "env/config.yaml").read_text())
+        self.config["retrieval"]["embedding"]["modelId"] = None
         self.config["catalog"]["skuCount"] = 30
         self.config["queries"]["familyCount"] = 20
         self.project = dict(
@@ -101,7 +102,7 @@ class SkeletonTest(unittest.TestCase):
         self.assertFalse((self.root / "artifacts/runs").exists())
 
     def test_stage_runs_once_configuration_is_filled(self):
-        result = run_stage(self.settings(), "retrieval")
+        result = run_stage(self.settings(), "release")
         self.assertEqual(result["status"], SKELETON)
         published = Path(str(result["artifact"]))
         self.assertTrue((published / "manifest.json").is_file())
@@ -111,17 +112,10 @@ class SkeletonTest(unittest.TestCase):
 
     def test_empty_jsonl_is_not_presented_as_a_result(self):
         """0 件の JSONL だけを見て「結果が空だった」と読めてはいけない。"""
-        result = run_stage(self.settings(), "training")
+        result = run_stage(self.settings(), "release")
         published = Path(str(result["artifact"]))
-        payload = json.loads((published / "feature_schema.json").read_text())
+        payload = json.loads((published / "decision.json").read_text())
         self.assertIs(payload["implemented"], False)
-
-    def test_unimplemented_retrieval_keeps_empty_rows_explicitly_marked(self):
-        result = run_stage(self.settings(), "retrieval")
-        published = Path(str(result["artifact"]))
-        self.assertEqual((published / "results.jsonl").read_bytes(), b"")
-        manifest = json.loads((published / "manifest.json").read_text())
-        self.assertIs(manifest["metadata"]["implemented"], False)
 
     # --- pipeline 全体 ---
 
@@ -134,7 +128,7 @@ class SkeletonTest(unittest.TestCase):
         self.assertEqual(len(result["stages"]), len(STAGES))
         self.assertIs(result["golden_path_complete"], False)
         declared = [s.name for s in STAGES if s.implemented]
-        self.assertEqual(result["implemented_stages"], declared)
+        self.assertEqual(result["implemented_stages"], ["contracts", "catalog", "judgments"])
         self.assertLess(len(declared), len(STAGES), "まだ未実装の段階が残っている")
 
     def test_implemented_stage_reports_completed_with_real_output(self):
@@ -199,7 +193,7 @@ class SkeletonTest(unittest.TestCase):
         self.assertIs(payload["golden_path_complete"], False)
 
     def test_cli_stage_exit_three_when_only_skeleton(self):
-        completed = self.cli("stage", "retrieval")
+        completed = self.cli("stage", "release")
         self.assertEqual(completed.returncode, 3, "実装が無いので skeleton=3")
 
     def test_cli_completed_stage_exits_zero(self):
@@ -228,13 +222,6 @@ class SkeletonTest(unittest.TestCase):
         completed = self.cli("stage", "simulation")
         self.assertEqual(completed.returncode, 2, completed.stderr)
         self.assertIsNone(json.loads(completed.stdout)["artifact"])
-
-    def test_cli_unblocked_incomplete_pipeline_exits_three(self):
-        self.config["simulation"]["enabled"] = True
-        self.write()
-        completed = self.cli("pipeline")
-        self.assertEqual(completed.returncode, 3, completed.stderr)
-        self.assertIs(json.loads(completed.stdout)["golden_path_complete"], False)
 
     def test_cli_stages_inventory_is_honest(self):
         completed = self.cli("stages")

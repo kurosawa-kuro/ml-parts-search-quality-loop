@@ -1,5 +1,9 @@
 # オフライン評価・Slice・FailureCaseを実装する
 
+## 現在地（2026-09-22）
+
+完了。ir_measures 0.4.3による固定gainのNDCG/Recall/MRR、全query起点の分母・欠落・Slice・FailureCase・比較signatureを実装。手計算NDCG=0.7309292742059024との一致、gain二重適用防止、実検索/学習run評価を検証。 T1から引き継いだ独立正常fixtureも追加済み。証跡は `artifacts/loop-verification.json` と `tests/test_search_loop.py`。大規模10,000 SKUの検索・学習通し検証は未実施。
+
 ## Goal
 
 SearchRunと固定GTからRecall@100、NDCG@10、MRR@100、Slice、FailureCaseを生成し、不完全な評価を合格扱いしない評価経路を作る。
@@ -19,14 +23,14 @@ failure detection / integrity
 
 MetricPolicy v1と手計算値は05・07が正本。評価はQuerySet全件を起点にし、runやGTに現れた行だけで平均してはならない。
 
-## 着手前の確認（2026-09-22整理）
+## 着手前の記録（履歴）
 
 - 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
 - 依存: T1・T2は完了。T3のSearchRun待ち。
 - 入力: [T2の完了記録](../05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)。GTは2,000万行のため、利用時は`records.io.iter_judgments`を使い全件list化を避ける。
 - T1からの引継ぎ: **Evaluation・FailureCaseの独立した正常fixture**を本タスクで追加する。
 
-`ir_measures 0.4.3`は導入・版設定済み。provider APIでpolicyを再現する実装・一致検証は本タスクに残る。
+`ir_measures 0.4.3`は導入・版設定済み。provider APIでpolicyを再現する実装・一致検証は下記で完了。
 
 ## Scope
 
@@ -63,3 +67,10 @@ MetricPolicy v1と手計算値は05・07が正本。評価はQuerySet全件を�
 
 - 05と利用providerで指標定義が一致しないとき。
 - Failure分類に新しい業務上の意味を追加する必要があるとき。
+
+## 一括検証結果（2026-09-22）
+
+- `uv run --locked pytest -m ''`: 131 passed（29.64秒、実サービスを含む）。
+- `make lint build`: 成功。
+- pipeline入口: 120 SKU・40 family・80 Query、3 seedの検索→評価→学習→比較を21.16秒で実行し、全runのchecksumを検査。
+- 証跡: `artifacts/loop-verification.json`、実体は`artifacts/loop-smoke/`。小規模tuning NDCG差+0.256781、Recall差0。Slice件数不足でofflineはinconclusive。正式採用・Release合格は宣言しない。

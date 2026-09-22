@@ -1,0 +1,1 @@
+{"experiment_id": "experiment-hand", "parent_experiment_id": null, "hypothesis": "Dimension features improve fitment", "dataset_id": "dataset-hand", "queryset_id": "queries-hand", "gt_id": "gt-hand", "split_id": "split-hand", "metric_policy_id": "parts_metrics_v1", "variants": [{"name": "baseline", "model": null}], "seed": 11, "compared_runs": {"baseline": "run-hand"}}

@@ -6,7 +6,7 @@ help:
 	@echo 'config-check Validate public configuration (foundation only)'
 	@echo 'run / dev    Write a foundation run; no retrieval or training'
 	@echo 'stages       List Golden Path stages and their config dependencies'
-	@echo 'pipeline     Run every stage as a skeleton (exit 2=blocked, 3=skeleton only)'
+	@echo 'pipeline     Run implemented stages (exit 2=blocked, 3=incomplete)'
 	@echo 'test         Run unit and CLI tests (real-service tests are excluded)'
 	@echo 'test-all     Also run tests marked integration (needs local services)'
 	@echo 'fmt / lint   Format / check Python code'
@@ -25,7 +25,7 @@ run dev:
 stages:
 	@uv run --locked parts-search stages
 
-# 骨組みなので 0 は返らない。2=設定未確定で止まった / 3=骨組みのみ実行。
+# 未実装が残る間は0にならない。2=blocked / 3=incomplete。
 # 0 になるのは各段階の実装が入ったときだけ。
 pipeline:
 	@uv run --locked parts-search pipeline

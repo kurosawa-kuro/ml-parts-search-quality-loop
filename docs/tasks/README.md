@@ -65,7 +65,7 @@
 
 | ファイル | 用途 |
 |---|---|
-| [全体実装計画](03_active/20260921-search-quality-poc-implementation.md) | T1/T2完了、次はT3。全体は未完了 |
+| [全体実装計画](03_active/20260921-search-quality-poc-implementation.md) | T1〜T5完了、T6進行中。T7/T8未実装 |
 | [03_active/refactoring-candidates.md](03_active/refactoring-candidates.md) | 残りのクリーンアップ候補 |
 
 ## ルール
@@ -92,8 +92,7 @@
 ## Notes
 ```
 
-次に着手する機能は [T3](02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md)。
-現時点の`03_active`には全体計画と常設の整理候補だけを置く。T1は基盤完了・fixture残件移管、T2は大規模検証まで完了として`05_done`へ整理済み。T3〜T8は未実装なのでbacklogに保持する。
+次はT6の残件とT7/T8。T1〜T5を`05_done`、T6と全体計画を`03_active`、T7/T8をbacklogで管理する。
 
 ## 検索品質PoC
 
@@ -101,10 +100,10 @@
 - [Golden Pathの段階的実装](03_active/20260921-search-quality-poc-implementation.md)
 - [T1 データ契約validatorと手書きfixture](05_done/2026-09-22-データ契約validatorと手書きfixture.md)
 - [T2 合成カタログ・Query・GTとfamily分割](05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)
-- [T3 Vector Baseline検索とSearchRun](02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md)
-- [T4 評価・Slice・FailureCase](02_backlog/2026-09-22-評価SliceとFailureCase.md)
-- [T5 構造化FeatureとLambdaRank](02_backlog/2026-09-22-構造化FeatureとLambdaRank.md)
-- [T6 Experiment比較と品質Gate](02_backlog/2026-09-22-Experiment比較と品質Gate.md)
+- [T3 Vector Baseline検索とSearchRun](05_done/2026-09-22-VectorBaseline検索とSearchRun.md)
+- [T4 評価・Slice・FailureCase](05_done/2026-09-22-評価SliceとFailureCase.md)
+- [T5 構造化FeatureとLambdaRank](05_done/2026-09-22-構造化FeatureとLambdaRank.md)
+- [T6 Experiment比較と品質Gate](03_active/2026-09-22-Experiment比較と品質Gate.md)
 - [T7 疑似オンラインFeedback Loop](02_backlog/2026-09-22-疑似オンラインFeedbackLoop.md)
 - [T8 独立評価・Release・Golden Path](02_backlog/2026-09-22-独立評価ReleaseとGoldenPath.md)
 - [仕様・設計整理の作業記録](05_done/20260921-distill-search-quality-spec.md)

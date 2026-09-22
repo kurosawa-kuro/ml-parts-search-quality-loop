@@ -1,0 +1,1 @@
+{"schema_id": "features-hand", "columns": [{"name": "vector_score", "type": "float64", "default": null, "null": "nan_with_mask"}], "transform_version": "hand-v1", "normalization": {}, "checksum": "hand-checksum"}

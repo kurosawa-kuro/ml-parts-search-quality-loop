@@ -1,0 +1,1 @@
+{"failure_id": "failure-hand", "query_id": "q-hand", "run_id": "run-hand", "evidence_ids": ["run-hand", "gt-hand"], "category": "retrieval_miss", "description": "Relevant product absent from candidates", "next_experiment_id": null}

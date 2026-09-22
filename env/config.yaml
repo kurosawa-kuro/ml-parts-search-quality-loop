@@ -120,14 +120,33 @@ qualityGate:
   repetitionSeeds: [11, 22, 33]
 
 simulation:
-  # 仮置き 2026-09-22。enabled は T7 着手時に true へ。
-  enabled: false
+  # T7 で確率と分布を具体化し版付きで固定（2026-09-22）。null が残る間は開始しない。
+  enabled: true
   policyId: parts_sim_v1
+  policyVersion: parts_sim_v1.0.0
   observationWindowSeconds: 1800
   behaviorModel: position_biased_cascade_v1
   developmentSplit: tuning
   validationSplit: production
   pairedRandomStreams: true
+  sessionsPerQuery: 4
+  # 位置バイアス: examine(rank) = 1 / rank**decay（cascade の examine 確率）。
+  positionBias:
+    model: inverse_rank_power
+    decay: 1.0
+  # relevance>=3 を relevant、==2 を marginal、それ未満を irrelevant とみなす。
+  clickProbability:
+    relevant: 0.65
+    marginal: 0.30
+    irrelevant: 0.03
+  conversionProbabilityGivenClick: 0.25
+  reformulationProbability:
+    zeroResult: 0.80
+    noClick: 0.45
+    afterClick: 0.05
+  # 観測窓の外へずれる遅着 interaction を作る幅（結合されず隔離されることの検査に使う）。
+  lateInteractionSeconds: 2400
+  seed: 777
 
 retry:
   retrievalMaxAttempts: 3

@@ -15,6 +15,22 @@ from parts_search.pipelines.inputs import dataset_rows, reference
 from parts_search.pipelines.synthetic import check_records, digest
 
 
+def error_code(error: Exception, fallback: str) -> str:
+    """Classify exceptions without publishing service responses or credentials."""
+    import httpx
+
+    current = error
+    seen = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, (TimeoutError, httpx.TimeoutException)):
+            return "timeout"
+        if isinstance(current, (ConnectionError, httpx.ConnectError)):
+            return "dependency_unavailable"
+        current = getattr(current, "source", None) or current.__cause__ or current.__context__
+    return fallback
+
+
 def preprocess(text: str, kind: str) -> str:
     text = unicodedata.normalize("NFKC", text).translate(str.maketrans("‐‑‒–—−", "------"))
     text = re.sub(r"[A-Za-z]+(?:-[A-Za-z0-9]+)+", lambda m: m[0].upper(), text)
@@ -22,26 +38,59 @@ def preprocess(text: str, kind: str) -> str:
 
 
 class E5Encoder:
+    """Persistent subprocess avoids the torch/libomp + LightGBM runtime deadlock."""
+
     def __init__(self, embedding: dict):
-        import torch
-        from sentence_transformers import SentenceTransformer
+        import subprocess
+        import sys
 
         if embedding["preprocessingVersion"] != "parts_e5_v1":
             raise FoundationError("Unsupported embedding preprocessing policy")
         if not re.fullmatch(r"[a-f0-9]{40}", embedding["revision"]):
             raise FoundationError("Embedding revision must be a commit SHA")
-        torch.set_num_threads(2)
-        self.model = SentenceTransformer(
-            embedding["modelId"], revision=embedding["revision"], device="cpu"
+        self.worker = subprocess.Popen(
+            [sys.executable, "-m", "parts_search.embedding_worker"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True,
         )
+        try:
+            if self._exchange(embedding) != {"ready": True}:
+                raise FoundationError("Embedding worker did not start")
+        except BaseException:
+            self.close()
+            raise
+
+    def _exchange(self, value):
+        import json
+        import selectors
+
+        self.worker.stdin.write(json.dumps(value) + "\n")
+        self.worker.stdin.flush()
+        with selectors.DefaultSelector() as selector:
+            selector.register(self.worker.stdout, selectors.EVENT_READ)
+            if not selector.select(timeout=180):
+                raise TimeoutError("Embedding worker timed out")
+        line = self.worker.stdout.readline()
+        if not line:
+            raise FoundationError("Embedding worker exited")
+        return json.loads(line)
 
     def encode(self, texts, kind):
-        return self.model.encode(
-            [preprocess(t, kind) for t in texts],
-            batch_size=16,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        ).tolist()
+        return self._exchange({"texts": texts, "kind": kind})
+
+    def close(self):
+        import subprocess
+
+        if self.worker.poll() is None:
+            self.worker.terminate()
+            try:
+                self.worker.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.worker.kill()
+                self.worker.wait()
+        self.worker.stdin.close()
+        self.worker.stdout.close()
 
 
 def ranked_points(client, collection, vector, limit, total):
@@ -119,8 +168,8 @@ def build_retrieval(config: dict, dataset: Path, run_id: str, *, encoder=None, c
             client.upsert(collection, points=points, wait=True)
         if client.count(collection, exact=True).count != len(products):
             raise FoundationError("Qdrant index count mismatch")
-    except Exception:
-        failure = "index_unavailable"
+    except Exception as exc:
+        failure = error_code(exc, "index_unavailable")
         logger().error("retrieval index setup failed (details withheld from public artifact)")
     try:
         for index, query in enumerate(queries):
@@ -136,8 +185,8 @@ def build_retrieval(config: dict, dataset: Path, run_id: str, *, encoder=None, c
                         )
                         error = None
                         break
-                    except Exception:
-                        error = "retrieval_failed"
+                    except Exception as exc:
+                        error = error_code(exc, "retrieval_failed")
                         if attempt < config["retry"]["retrievalMaxAttempts"]:
                             time.sleep(config["retry"]["backoffSeconds"][attempt - 1])
             for rank, point in enumerate(points, 1):
@@ -180,6 +229,8 @@ def build_retrieval(config: dict, dataset: Path, run_id: str, *, encoder=None, c
             if (index + 1) % 100 == 0:
                 logger().info("retrieval queries=%d/%d", index + 1, len(queries))
     finally:
+        if isinstance(encoder, E5Encoder):
+            encoder.close()
         if owned and client is not None:
             client.close()
     for name, rows in (

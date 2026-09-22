@@ -49,10 +49,22 @@ def aggregate(rows: list[dict]) -> dict:
 
 def build_evaluation(config: dict, dataset: Path, judgments: Path, search: Path, run_id: str):
     policy = config["evaluation"]
+    expected = {
+        "ndcgCutoff": 10,
+        "recallCutoff": 100,
+        "mrrCutoff": 100,
+        "relevanceThreshold": 2,
+        "gainByRelevance": [0, 0, 1, 3, 7],
+        "dcgFormula": "gain_over_log2_rank_plus_one",
+        "aggregation": "query_macro",
+        "noRelevantPolicy": "exclude_and_report",
+        "incompletePolicy": "inconclusive",
+    }
     if (
         policy["policyId"] != "parts_metrics_v1"
         or policy["version"] != version("ir_measures")
         or policy["provider"] != "ir_measures"
+        or any(policy.get(key) != value for key, value in expected.items())
     ):
         raise FoundationError("Unsupported metric policy/provider version")
     dm, products, queries, split = dataset_rows(dataset)

@@ -1,0 +1,1 @@
+{"decision_id": "decision-hand", "baseline_run_id": "baseline-hand", "candidate_run_id": "candidate-hand", "policy_id": "parts_gate_v1", "comparison": {"ndcg_delta": 0.02}, "denominators": {"queries": 10}, "gate_results": {"slice_count": false}, "decision": "inconclusive", "reason": "Insufficient slice size", "release_id": null}

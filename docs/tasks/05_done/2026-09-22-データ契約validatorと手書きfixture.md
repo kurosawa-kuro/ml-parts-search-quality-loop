@@ -1,5 +1,9 @@
 # データ契約validatorと手書きfixtureを実装する
 
+## 現在地（2026-09-22追記）
+
+全14種の独立正常fixtureを追加済み。T3〜T6からの引継ぎ8種は`tests/test_search_loop.py`で検査する。以下の未完了記述・82/85/114件の結果は各時点の履歴。
+
 ## Goal
 
 [データモデル](../../05_data_model.md)の最小レコード契約をコード化し、後続工程が不正入力や不完全評価を成功扱いできない土台を作る。
@@ -93,10 +97,10 @@ uv run --locked parts-search verify-artifact artifacts/reports/<run_id>   # veri
 | 正常fixture / 残作業 | 引継ぎ先 |
 |---|---|
 | SplitManifest | T2で`tests/fixtures/valid/splits.json`と独立テストを追加済み |
-| Candidate | [T3](../02_backlog/2026-09-22-VectorBaseline検索とSearchRun.md) |
-| Evaluation・FailureCase、指標計算と既存期待値の照合 | [T4](../02_backlog/2026-09-22-評価SliceとFailureCase.md) |
-| FeatureRow・FeatureSchema・ModelBundle | [T5](../02_backlog/2026-09-22-構造化FeatureとLambdaRank.md) |
-| Experiment・PromotionDecision | [T6](../02_backlog/2026-09-22-Experiment比較と品質Gate.md) |
+| Candidate | [T3](../05_done/2026-09-22-VectorBaseline検索とSearchRun.md) |
+| Evaluation・FailureCase、指標計算と既存期待値の照合 | [T4](../05_done/2026-09-22-評価SliceとFailureCase.md) |
+| FeatureRow・FeatureSchema・ModelBundle | [T5](../05_done/2026-09-22-構造化FeatureとLambdaRank.md) |
+| Experiment・PromotionDecision | [T6](../03_active/2026-09-22-Experiment比較と品質Gate.md) |
 
 FeatureRowとPromotionDecisionは異常例の検査があるが、正常fixtureは未作成。
 各引継ぎ先の受入条件にも明記した。元の全レコード正常fixture条件をこのタスクだけで

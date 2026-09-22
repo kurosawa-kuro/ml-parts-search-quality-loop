@@ -7,7 +7,7 @@ from pathlib import Path
 from parts_search.errors import FoundationError
 from parts_search.pipelines.evaluation import METRICS, aggregate
 from parts_search.pipelines.inputs import artifact, reference
-from parts_search.pipelines.synthetic import digest
+from parts_search.pipelines.synthetic import check_records, digest
 from parts_search.records.io import iter_jsonl, read_json
 
 
@@ -21,7 +21,10 @@ def compare(
     r = {row["query_id"]: row for row in right if row["split"] == split}
     if not left_rows or set(left_rows) != set(r):
         reasons.append("query_set_mismatch_or_empty")
-    if any(row["status"] not in ("complete", "no_relevant") for row in [*left_rows.values(), *r.values()]):
+    if any(
+        row["status"] not in ("complete", "no_relevant")
+        for row in [*left_rows.values(), *r.values()]
+    ):
         reasons.append("incomplete_evaluation")
     a, b = aggregate(list(left_rows.values())), aggregate(list(r.values()))
     if a["evaluable_queries"] != b["evaluable_queries"] or not a["evaluable_queries"]:
@@ -72,10 +75,30 @@ def compare(
         "split": split,
         "baseline": a,
         "candidate": b,
+        "per_query_delta": [
+            {
+                "query_id": qid,
+                **{
+                    metric: r[qid][metric] - left_rows[qid][metric]
+                    if r[qid][metric] is not None and left_rows[qid][metric] is not None
+                    else None
+                    for metric in METRICS
+                },
+            }
+            for qid in sorted(set(left_rows) & set(r))
+        ],
     }
 
 
-def build_gate(config: dict, baseline: Path, evaluations: list[Path], run_id: str):
+def build_gate(
+    config: dict,
+    baseline: Path,
+    evaluations: list[Path],
+    run_id: str,
+    *,
+    parent_experiment_id: str | None = None,
+    retry_of: str | None = None,
+):
     policy = config["qualityGate"]
     bm = artifact(baseline, "evaluation")
     b = read_json(baseline / "metrics.json")
@@ -124,11 +147,53 @@ def build_gate(config: dict, baseline: Path, evaluations: list[Path], run_id: st
         "decision": "inconclusive",
         "reasons": ["independent_holdout_and_simulation_required"],
         "release_id": None,
+        "parent_experiment_id": parent_experiment_id,
+        "retry_of": retry_of,
     }
-    return {"experiment.json": result, "decision.json": result}, {
+    search_manifest = artifact(Path(bm["metadata"]["search"]["path"]), ("retrieval", "training"))
+    dm = artifact(Path(bm["metadata"]["dataset"]["path"]), "catalog")
+    if retry_of is not None and parent_experiment_id is None:
+        # 再試行は系譜を切らない。元実験を親として残す（既存 run は変更しない）。
+        parent_experiment_id = retry_of
+    experiment = {
+        "experiment_id": run_id,
+        "parent_experiment_id": parent_experiment_id,
+        "hypothesis": "Structured features improve reranking on fixed vector candidates",
+        "dataset_id": dm["metadata"]["dataset_id"],
+        "queryset_id": dm["metadata"]["queryset_id"],
+        "gt_id": b["gt_id"],
+        "split_id": dm["metadata"]["split_id"],
+        "metric_policy_id": b["metric_policy_id"],
+        "variants": refs,
+        "seed": policy["repetitionSeeds"][0],
+        "compared_runs": {
+            "baseline": b["search_run_id"],
+            "candidates": [c["evaluation_id"] for c in comparisons],
+        },
+    }
+    decision = {
+        "decision_id": run_id,
+        "baseline_run_id": search_manifest["run_id"],
+        "candidate_run_id": c["search_run_id"] if comparisons else "not_run",
+        "policy_id": policy["policyId"],
+        "comparison": {"repetitions": comparisons},
+        "denominators": {"repetitions": len(comparisons)},
+        "gate_results": {"offline": offline, "repetition_complete": complete},
+        "decision": "inconclusive",
+        "reason": "Independent holdout and simulation required",
+        "release_id": None,
+    }
+    check_records("Experiment", [experiment])
+    check_records("PromotionDecision", [decision])
+    return {
+        "experiment.json": {"schema_version": 1, **experiment},
+        "decision.json": {**result, "record": decision},
+    }, {
         "policy": policy,
         "baseline": reference(baseline),
         "candidates": refs,
         "offline_verdict": offline,
         "decision": "inconclusive",
+        "parent_experiment_id": parent_experiment_id,
+        "retry_of": retry_of,
     }

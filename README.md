@@ -1,7 +1,7 @@
 # Parts Search Quality Loop
 
 多言語の部品検索で、失敗検知・GT更新・再学習・独立評価をつなぐPoC。
-現在は **Python foundation・T1データ契約・T2合成Catalog/Query/GTとfamily分割** を実装済み。厳密な設定検証、JSON/JSONL成果物、checksum、原子的なrun公開、CLI、実テスト、wheel/sdist buildが動く。検索・学習・品質評価・疑似オンライン・ReleaseBundleは未実装であり、foundationの成功をML工程の成功とは扱わない。
+現在は **T1〜T5とT6のoffline比較** を実装済み。固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較がつながる。疑似オンライン・独立評価・ReleaseBundleは未実装。
 
 ## 現在地と実装順序
 
@@ -10,12 +10,12 @@
 | # | 実装単位 | 状態 |
 |---|---|---|
 | Foundation | 設定、成果物store、bootstrap CLI、テスト、build | 実装済み |
-| T1 | データ契約validatorと独立した手書きfixture | 実装済み（一部レコードfixtureは後続工程で追加） |
+| T1 | データ契約validatorと独立した手書きfixture | 実装済み（全14種の正常fixtureあり） |
 | T2 | 合成Catalog、Query、GT、family分割 | 実装済み |
-| T3 | Qdrant Vector BaselineとSearchRun | 次の実装候補 |
-| T4 | オフライン評価、Slice、FailureCase | backlog |
-| T5 | 構造化FeatureとLightGBM LambdaRank | backlog |
-| T6 | Experiment比較と品質Gate | backlog |
+| T3 | Qdrant Vector BaselineとSearchRun | 実装済み |
+| T4 | オフライン評価、Slice、FailureCase | 実装済み |
+| T5 | 構造化FeatureとLightGBM LambdaRank | 実装済み |
+| T6 | Experiment比較と品質Gate | offline比較実装済み・残件あり |
 | T7 | 疑似オンラインFeedback Loop | backlog |
 | T8 | 独立評価、Release、rollback、Golden Path E2E | backlog |
 

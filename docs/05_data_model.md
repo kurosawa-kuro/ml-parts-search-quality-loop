@@ -171,3 +171,10 @@ runは公開せず、既存runを置換しない。GT読込は`records.io.iter_j
 
 未コミットソースの記録は既存foundationと同じrevision・dirty・source/lock checksumまで。
 patchの自動保存・完全なコード復元は未実装であり、再現実行には同じソースとlockを保持する。
+
+## T3〜T6の実装契約（2026-09-22）
+
+- `parts_e5_v1`: NFKC、ハイフン統一、型番英字大文字、query/passage prefix。JA/EN商品文を結合し固定revision E5で正規化vector化する。exact cosine検索、同点はproduct_id昇順。index_idはcatalog checksumとembedding設定に依存し、実collectionはrunごとに独立する。
+- `parts_features_v1`: vector_score, model_exact, category_exact, diameter_delta, length_delta, material_exact, standard_exact, usage_exactの8列。寸法差はmm、条件rangeは中点との差。欠損はJSON null＋missing_mask、LightGBM入力ではNaN。列順・default・変換版・checksumを保存し再読込時に照合する。
+- 学習labelはtrain splitのみ使用。GT rule_idやlabelを推論Featureに含めない。ModelBundleはモデル、FeatureSchema、label_gainと入力checksumへ紐付く。
+- 比較signatureはdataset/GT/metric/simulation設定に依存。candidate checksum一致とseed [11,22,33]を追加検査。正式decisionは独立holdout/simulation未実装の間inconclusive、offline_verdictを別途保持する。

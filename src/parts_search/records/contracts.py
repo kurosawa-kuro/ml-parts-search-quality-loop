@@ -33,7 +33,17 @@ SCORE_TYPES = ("similarity", "distance", "model_score", "fused_score")
 # 05 Evaluation: 完全判定でない場合は inconclusive、正解不在は no_relevant。
 EVALUATION_STATUS = ("complete", "inconclusive", "no_relevant")
 DECISIONS = ("promote", "reject", "inconclusive")
-FAILURE_CATEGORIES = ("retrieval_miss", "rerank_miss", "gt_defect", "execution_failure")
+FAILURE_CATEGORIES = (
+    "retrieval_miss",
+    "rerank_miss",
+    "gt_defect",
+    "execution_failure",
+    "simulation_miss",
+)
+
+# 05「疑似オンラインイベント」: impression は 0 件でも 1 回記録する。
+# interaction は提示された商品にだけ結合する。
+EVENT_TYPES = ("impression", "click", "conversion", "reformulation")
 
 
 @dataclass(frozen=True)
@@ -312,6 +322,46 @@ PROMOTION_DECISION = Record(
     doc="採用時のみ release_id を持つ。",
 )
 
+EVENT = Record(
+    name="Event",
+    fields=(
+        _text("event_id"),
+        _text("event_type", enum=EVENT_TYPES),
+        _int("event_time", minimum=0),
+        _text("session_id"),
+        _text("run_id"),
+        _text("query_id"),
+        _text("simulation_policy_id"),
+        _text("impression_id"),
+        Field("items", "list"),
+        _text("release_id", nullable=True),
+        _text("product_id", nullable=True),
+        _text("next_query_id", nullable=True),
+    ),
+    identity=("event_id",),
+    doc="impression は 0 件でも空 items で 1 回記録する。interaction は提示商品のみ。",
+)
+
+RELEASE_BUNDLE = Record(
+    name="ReleaseBundle",
+    fields=(
+        _text("release_id"),
+        _text("decision_id"),
+        _text("previous_release_id", nullable=True),
+        Field("search_config", "dict"),
+        Field("dataset", "dict"),
+        Field("index", "dict"),
+        _text("embedding_revision"),
+        Field("model", "dict"),
+        _text("feature_schema_id"),
+        Field("policies", "dict"),
+        Field("checksums", "dict"),
+        _text("created_at"),
+    ),
+    identity=("release_id",),
+    doc="08: 検索構成・catalog/index・embedding revision・model・policy を checksum ごと固定する。",
+)
+
 RECORDS: tuple[Record, ...] = (
     PRODUCT,
     QUERY,
@@ -327,6 +377,8 @@ RECORDS: tuple[Record, ...] = (
     EVALUATION,
     FAILURE_CASE,
     PROMOTION_DECISION,
+    EVENT,
+    RELEASE_BUNDLE,
 )
 
 RECORD_NAMES: tuple[str, ...] = tuple(r.name for r in RECORDS)

@@ -150,6 +150,20 @@ CONFIG_SCHEMA = obj(
         developmentSplit=const("tuning"),
         validationSplit=const("production"),
         pairedRandomStreams=const(True),
+        # T7 で具体化した版付き policy。null のままなら simulation を開始しない
+        # （05「未設定ならシミュレーションを開始しない」）。
+        policyVersion=OPTIONAL_TEXT,
+        sessionsPerQuery=nullable(POSITIVE),
+        positionBias=obj(model=OPTIONAL_TEXT, decay=nullable(NONNEGATIVE)),
+        clickProbability=obj(
+            **dict.fromkeys(["relevant", "marginal", "irrelevant"], nullable(NONNEGATIVE))
+        ),
+        conversionProbabilityGivenClick=nullable(NONNEGATIVE),
+        reformulationProbability=obj(
+            **dict.fromkeys(["zeroResult", "noClick", "afterClick"], nullable(NONNEGATIVE))
+        ),
+        lateInteractionSeconds=nullable(NONNEGATIVE),
+        seed=nullable(SEED),
     ),
     retry=obj(
         retrievalMaxAttempts=POSITIVE, backoffSeconds={"type": "array", "items": NONNEGATIVE}

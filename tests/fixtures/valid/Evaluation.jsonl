@@ -1,0 +1,1 @@
+{"evaluation_id": "evaluation-hand", "search_run_id": "run-hand", "candidate_run_id": "run-hand", "gt_id": "gt-hand", "metric_policy_id": "parts_metrics_v1", "comparison_signature": "signature-hand", "status": "complete", "per_query": [{"query_id": "q-hand", "ndcgAt10": 1.0}], "aggregate": {"ndcgAt10": 1.0}, "denominators": {"queries": 1}, "coverage": {"complete_queries": 1}}

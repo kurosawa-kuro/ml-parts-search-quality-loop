@@ -1,6 +1,6 @@
 # 04 ワークフロー
 
-> 設定検証・foundation bootstrap・成果物検証・**レコード契約validator（T1）**は実装済み。T2も実装済み。9段階のうち`contracts`・`catalog`・`judgments`が実処理。検索・学習・評価・gate・releaseは未実装。
+> T1〜T5およびT6のoffline比較を実装済み。7段階に実処理あり。simulation・releaseは未実装。
 
 ## 実行できるコマンド
 
@@ -105,3 +105,15 @@ uv run --locked parts-search verify-artifact artifacts/judgments/<run_id>
 入力の改変・未対応版・未知policyはexit 1。GTの判定完了状況はsummary.jsonで確認する。
 再実行は新しい公開IDへ保存し、以前の成果物は保持する。Pythonで大きなGTを読む場合は
 `parts_search.records.io.iter_judgments(Path(...))`を最後まで消費する。
+
+## 検索・評価・学習・比較の実行（T3〜T6）
+
+ローカルQdrant (`http://localhost:6333`) を起動し、既存dataset/GTを明示して再利用する。GCPは使用しない。
+
+```bash
+uv run --locked parts-search pipeline --dataset artifacts/datasets/<id> --judgments artifacts/judgments/<id> --stop-on-block
+```
+
+検索→baseline評価→train splitで3 seed学習→candidate評価→offline比較まで実行する。simulation未実装のため最終exit 2、Golden Path未完了となる。GTはストリームで扱うが各評価/学習で読み直すため、大規模データでは時間がかかる。120 SKU・40 familyの接続検証は `make test-all`。E5はキャッシュ優先の専用プロセスで実行し、Intel MacのOpenMP競合を回避する。
+
+`stage retrieval --dataset ...`、`stage evaluation --dataset ... --judgments ... --search ...`、`stage training --dataset ... --judgments ... --search ...`、`stage gate --baseline ... --candidate-evaluation ...`で個別実行できる。candidate-evaluationはseedごとに繰り返す。gateのexit 0は成果物保存成功であり採用合格ではない。decision.jsonのoffline_verdictと正式decisionを区別する。

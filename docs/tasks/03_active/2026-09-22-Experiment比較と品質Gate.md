@@ -1,5 +1,11 @@
 # Experiment比較と品質Gateを実装する
 
+## 現在地（2026-09-22）
+
+進行中。GatePolicy checksumを学習前に凍結し、同一CandidateSet・signature・分母・Slice・seed [11,22,33]を検査するoffline比較、query別差分、Experiment/PromotionDecision保存を実装。独立正常fixtureも追加済み。
+
+残り: retry_of/parent_experiment_idのCLI接続、品質不採用と実行失敗の終了コード分離。現在stage gateのexit 0は比較成果物の保存成功を示す。正式昇格はT7/T8の証跡がないためinconclusive。offline_verdictを別途保存する。
+
 ## Goal
 
 入力・設定・variantを凍結したExperimentを実行し、baselineとcandidateを同じ比較条件で評価してaccepted/rejected/inconclusiveを保存する。
@@ -17,9 +23,9 @@ integrity / safety
 
 ## Context
 
-品質Gateの意味は07が正本。`parts_gate_v1`、最小NDCG差0.01、許容回帰0.01（誤適合0.005）、最低Slice件数30、seed `[11,22,33]` は設定済みの仮置き。[判断記録](./20260921-search-quality-poc-decisions.md)に従い、candidate比較前にmanifestへ凍結する。Gateの比較処理は未実装。
+品質Gateの意味は07が正本。`parts_gate_v1`、最小NDCG差0.01、許容回帰0.01（誤適合0.005）、最低Slice件数30、seed `[11,22,33]` は設定済みの仮置き。[判断記録](../02_backlog/20260921-search-quality-poc-decisions.md)に従い、candidate比較前にmanifestへ凍結する。offline比較処理は実装済み。
 
-## 着手前の確認（2026-09-22整理）
+## 着手前の記録（履歴）
 
 - 実処理は未実装。CLIの段階宣言・placeholderと依存ライブラリの導入は完了扱いに含めない。
 - 依存: T4のEvaluationとT5のcandidate run待ち。
@@ -63,3 +69,10 @@ integrity / safety
 
 - 凍結した品質閾値・guardrail・最低Slice件数・seedをcandidateの結果に応じて変更する必要が出たとき。
 - baselineとcandidateで固定すべき入力を一致させられないとき。
+
+## 一括検証結果（2026-09-22）
+
+- `uv run --locked pytest -m ''`: 131 passed（29.64秒、実サービスを含む）。
+- `make lint build`: 成功。
+- pipeline入口: 120 SKU・40 family・80 Query、3 seedの検索→評価→学習→比較を21.16秒で実行し、全runのchecksumを検査。
+- 証跡: `artifacts/loop-verification.json`、実体は`artifacts/loop-smoke/`。小規模tuning NDCG差+0.256781、Recall差0。Slice件数不足でofflineはinconclusive。正式採用・Release合格は宣言しない。
