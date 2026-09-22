@@ -222,9 +222,10 @@ def build_simulation(
                     break  # cascade: 最初の click で離脱する
             kind = "zeroResult" if not shown else ("afterClick" if clicked else "noClick")
             reformulated = draws[-1] < reformulation[kind]
-            late = draws[-2] < 0.02
+            # 一部を観測窓外へずらし、遅着が隔離されることを実データで踏む。
+            arrives_late = draws[-2] < 0.02
             if reformulated:
-                offset = int(policy["lateInteractionSeconds"]) if late else window // 2
+                offset = int(policy["lateInteractionSeconds"]) if arrives_late else window // 2
                 event = {
                     "event_id": f"{impression_id}-reformulation",
                     "event_type": "reformulation",
