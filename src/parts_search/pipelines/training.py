@@ -196,9 +196,9 @@ def build_training(config: dict, dataset: Path, judgments: Path, search: Path, r
         "feature_schema.json": {"schema_version": 1, **schema},
         "model.json": payload,
         "bundle.json": {"schema_version": 1, **bundle},
-        "features.jsonl": feature_rows,
-        "candidates.jsonl": all_candidates,
-        "results.jsonl": reranked,
+        "features.jsonl.gz": feature_rows,
+        "candidates.jsonl.gz": all_candidates,
+        "results.jsonl.gz": reranked,
         "outcomes.jsonl": new_outcomes,
     }, {
         "dataset_digests": dm["metadata"]["set_digests"],

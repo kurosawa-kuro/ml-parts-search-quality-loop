@@ -265,8 +265,8 @@ def build_retrieval(config: dict, dataset: Path, run_id: str, *, encoder=None, c
         "tie_break": "product_id_asc",
     }
     return {
-        "candidates.jsonl": candidates,
-        "results.jsonl": results,
+        "candidates.jsonl.gz": candidates,
+        "results.jsonl.gz": results,
         "outcomes.jsonl": outcomes,
         "index.json": index_manifest,
     }, {

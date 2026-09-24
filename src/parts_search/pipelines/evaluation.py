@@ -179,6 +179,6 @@ def build_evaluation(config: dict, dataset: Path, judgments: Path, search: Path,
         "search": reference(search),
         "policy": policy,
         "comparison_signature": signature,
-        "candidate_checksum": sm["outputs"]["candidates.jsonl"],
+        "candidate_checksum": sm["outputs"]["candidates.jsonl.gz"],
         "evaluation_status": status,
     }

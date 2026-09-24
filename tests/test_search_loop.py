@@ -122,7 +122,7 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
     retrieval = run_stage(settings, "retrieval", dataset=ds)
     assert retrieval["status"] == "completed", retrieval
     search = Path(retrieval["artifact"])
-    candidates = read_records("Candidate", search / "candidates.jsonl")
+    candidates = read_records("Candidate", search / "candidates.jsonl.gz")
     assert len(candidates) == 80 * 100
     baseline = Path(
         run_stage(settings, "evaluation", dataset=ds, judgments=gt, search=search)["artifact"]
@@ -138,7 +138,7 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
         schema.pop("schema_version")
         payload = read_json(trained / "model.json")
         model = load_model(payload, schema)
-        feature_rows = read_records("FeatureRow", trained / "features.jsonl")
+        feature_rows = read_records("FeatureRow", trained / "features.jsonl.gz")
         predicted = model.predict(
             np.asarray([r["values"] for r in feature_rows], dtype=float), num_threads=2
         )
@@ -146,7 +146,7 @@ def test_e5_qdrant_evaluation_training_and_comparison(tmp_path):
             (r["query_id"], r["product_id"]): float(v)
             for r, v in zip(feature_rows, predicted, strict=True)
         }
-        for r in read_records("SearchResult", trained / "results.jsonl"):
+        for r in read_records("SearchResult", trained / "results.jsonl.gz"):
             assert r["score"] == pytest.approx(expected[r["query_id"], r["product_id"]])
         broken = copy.deepcopy(schema)
         broken["columns"].reverse()
@@ -315,7 +315,7 @@ def test_retrieval_failure_is_not_successful_empty(tmp_path, mode):
     outputs, metadata = build_retrieval(
         config, ds, "failure-oracle", encoder=Encoder(), client=Client()
     )
-    assert not outputs["candidates.jsonl"] and not outputs["results.jsonl"]
+    assert not outputs["candidates.jsonl.gz"] and not outputs["results.jsonl.gz"]
     assert len(outputs["outcomes.jsonl"]) == 40
     for row in outputs["outcomes.jsonl"]:
         assert row["returned_count"] == 0

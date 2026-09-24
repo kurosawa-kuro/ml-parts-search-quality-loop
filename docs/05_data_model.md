@@ -4,15 +4,17 @@
 
 ## 保存方式と識別
 
-PoCはローカル成果物を正本とする。メタデータはUTF-8 JSON、行データはUTF-8 JSONLとし、大量データのParquet化は互換adapterとして後続対応する。JSONLは`.jsonl.gz`（gzip、mtime=0で内容が同じなら同一checksum）でも保存する。圧縮は保存形の差であって契約の差ではなく、行の意味・件数・順序・検証は変えない。全成果物にschema_versionを付ける。IDは空白を含まない文字列とし、異なるlocaleの外部IDは名前空間を付けて取り込む。
+PoCはローカル成果物を正本とする。メタデータはUTF-8 JSON、行データはUTF-8 JSONLとし、大量データのParquet化は互換adapterとして後続対応する。JSONLは`.jsonl.gz`（gzip、mtime=0で内容が同じなら同一checksum）でも保存する。圧縮は保存形の差であって契約の差ではなく、行の意味・件数・順序・検証は変えない。`.gz`にするのはquery×候補で膨らむ行データ（`judgments` / `features` / `candidates` / `results`）に限る。全成果物にschema_versionを付ける。IDは空白を含まない文字列とし、異なるlocaleの外部IDは名前空間を付けて取り込む。
 
 ```text
 artifacts/
   datasets/<dataset_id>/       catalog.jsonl, queries.jsonl, splits.json, manifest.json
   judgments/<gt_id>/           judgments.jsonl.gz, summary.json, manifest.json
-  models/<model_id>/           model, feature_schema.json, manifest.json
+  models/<model_id>/           model.json, feature_schema.json, bundle.json, manifest.json,
+                              features.jsonl.gz, candidates.jsonl.gz, results.jsonl.gz,
+                              outcomes.jsonl
   experiments/<experiment_id>/ experiment.json
-  runs/<run_id>/              manifest.json, candidates.jsonl, results.jsonl,
+  runs/<run_id>/              manifest.json, candidates.jsonl.gz, results.jsonl.gz,
                               outcomes.jsonl, metrics.json, per_query.jsonl,
                               slices.jsonl, events.jsonl, failures.jsonl
   releases/<release_id>/       manifest.json, decision.json, smoke.json

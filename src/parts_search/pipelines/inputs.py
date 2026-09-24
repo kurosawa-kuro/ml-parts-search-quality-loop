@@ -44,8 +44,8 @@ def search_rows(path: Path, dataset: dict, queries: list[dict], products: list[d
     manifest = artifact(path, ("retrieval", "training"))
     if manifest["metadata"].get("dataset_digests") != dataset["metadata"]["set_digests"]:
         raise FoundationError("SearchRun uses a different dataset")
-    candidates = read_records("Candidate", path / "candidates.jsonl")
-    results = read_records("SearchResult", path / "results.jsonl")
+    candidates = read_records("Candidate", path / "candidates.jsonl.gz")
+    results = read_records("SearchResult", path / "results.jsonl.gz")
     outcomes = read_records("QueryOutcome", path / "outcomes.jsonl")
     if validate_query_coverage(queries, outcomes):
         raise FoundationError("SearchRun does not cover QuerySet")
