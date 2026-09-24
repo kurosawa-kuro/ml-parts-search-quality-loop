@@ -4,12 +4,12 @@
 
 ## 保存方式と識別
 
-PoCはローカル成果物を正本とする。メタデータはUTF-8 JSON、行データはUTF-8 JSONLとし、大量データのParquet化は互換adapterとして後続対応する。全成果物にschema_versionを付ける。IDは空白を含まない文字列とし、異なるlocaleの外部IDは名前空間を付けて取り込む。
+PoCはローカル成果物を正本とする。メタデータはUTF-8 JSON、行データはUTF-8 JSONLとし、大量データのParquet化は互換adapterとして後続対応する。JSONLは`.jsonl.gz`（gzip、mtime=0で内容が同じなら同一checksum）でも保存する。圧縮は保存形の差であって契約の差ではなく、行の意味・件数・順序・検証は変えない。全成果物にschema_versionを付ける。IDは空白を含まない文字列とし、異なるlocaleの外部IDは名前空間を付けて取り込む。
 
 ```text
 artifacts/
   datasets/<dataset_id>/       catalog.jsonl, queries.jsonl, splits.json, manifest.json
-  judgments/<gt_id>/           judgments.jsonl, manifest.json
+  judgments/<gt_id>/           judgments.jsonl.gz, summary.json, manifest.json
   models/<model_id>/           model, feature_schema.json, manifest.json
   experiments/<experiment_id>/ experiment.json
   runs/<run_id>/              manifest.json, candidates.jsonl, results.jsonl,
@@ -163,6 +163,11 @@ no_relevant_queries / relevance_countsを持ち、判定不能が残る場合の
 段階のcompletedは生成完了であり、正式評価の合格を意味しない。
 
 既定規模は10,000 SKU・1,000 family・2,000 Query、GTは2,000万行。
+**GTは全行を残す。** 2,000万行のうちrelevance=0が17,778,676行（88.9%・2026-09-24実測）を
+占めるが、0行を落として「判定済み集合＋例外リスト」に畳む圧縮は採らない。
+`judgments.jsonl.gz`にgzipで保存すると同じ実測データで4.61 GiB→約68 MB（70.8倍）になり、
+完全判定の検証（行数・ID順序・一意性をファイルから確認する）とreason単位の診断を
+どちらも失わずに容量問題が消えるため。判定ごとのreasonは0行にも残す。
 GTはquery単位のバッファで検査・書出し、全GTのlist/bytesを保持しない。
 storeのSHA-256生成と公開前checksum照合もストリーム処理。一時出力中に例外が起きた
 runは公開せず、既存runを置換しない。GT読込は`records.io.iter_judgments(artifact)`を使い、

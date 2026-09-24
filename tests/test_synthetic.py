@@ -263,7 +263,7 @@ def test_large_reader_checks_version_and_batch_boundary_duplicates(settings):
     duplicate = publish_run(
         settings.artifacts_root / "judgments",
         "duplicate",
-        {"judgments.jsonl": rows, "summary.json": summary},
+        {"judgments.jsonl.gz": rows, "summary.json": summary},
         {"stage": "judgments", "implemented": True, "gt_id": rows[0]["gt_id"]},
     )
     with pytest.raises(FoundationError, match="duplicated"):
@@ -272,7 +272,7 @@ def test_large_reader_checks_version_and_batch_boundary_duplicates(settings):
     unsupported = publish_run(
         settings.artifacts_root / "judgments",
         "unsupported",
-        {"judgments.jsonl": rows[:1], "summary.json": summary},
+        {"judgments.jsonl.gz": rows[:1], "summary.json": summary},
         {"stage": "judgments", "implemented": True, "gt_id": rows[0]["gt_id"]},
     )
     with pytest.raises(FoundationError, match="schema_version"):
@@ -347,7 +347,7 @@ def test_streaming_reader_rejects_truncation_and_wrong_gt(settings):
             settings.artifacts_root / "judgments",
             name,
             {
-                "judgments.jsonl": rows,
+                "judgments.jsonl.gz": rows,
                 "summary.json": {"schema_version": 1, "rows": expected, "expected_rows": expected},
             },
             metadata,

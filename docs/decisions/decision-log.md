@@ -106,3 +106,21 @@ _まだ判断は記録されていません。`log-decision` が末尾に追記�
   品質閾値も変更しない。
 - 調整条件: trainer 構成に乱択を入れる判断をしたときは、repetition の意味を再定義してから
   `repetitionSeeds` の扱いを決める。
+
+## 2026-09-24 GTは全行を残し、gzipで保存する（0行の畳み込みは採らない）
+
+- 判断: `judgments.jsonl` を `judgments.jsonl.gz` にする。行の意味・件数・順序・検証は変えない。
+  「relevance>0 と unrateable だけを行にし、0 は判定済み集合＋例外リストで表す」sparse 案は採らない。
+- 実測（2,000万行・4.61 GiB の実artifact）: relevance分布は 0=17,778,676 / 1=1,480,474 /
+  2=738,850 / 3=1,332 / 4=668、unrateable=0。sparse なら残るのは 11.1%（約 540 MB）。
+  同じデータの gzip は 96.75 MB → 1.366 MB（**70.8倍**、level 6）で、全体で約 68 MB になる。
+  圧縮の書込は 240 MB/s・40万行の読み戻しは 0.1 s なので、実行時間には現れない。
+- 根拠: sparse は容量で gzip に負けたうえ、失うものが 2 つある。(1) 完全判定の検証が
+  「ファイルから行数・ID順序・一意性を確認する」形から「エンコーディングの宣言を信じる」形へ
+  落ちる。(2) 0 行の `reason`（mandatory_violation / category_mismatch / unrelated）が
+  集計値に潰れ、GT policy の誤りを行単位で追えなくなる。容量が同じなら検証を残す方を選ぶ。
+- 実装: `runstore` は `.jsonl.gz` を gzip streaming で書き、checksum は**書いたバイト列**から取る
+  （書き戻して取ると `verify_run` が同一バイト列同士の比較になり、切断を検出できない）。
+  `mtime=0` で内容が同じなら同一 checksum。`records.io.iter_jsonl` は `.gz` を透過展開する。
+- 調整条件: gzip でも足りない規模（例: catalog 10万 SKU で GT 20億行）になったら、
+  sparse ではなく Parquet + 列圧縮へ進む。sparse 案は以降検討しない。

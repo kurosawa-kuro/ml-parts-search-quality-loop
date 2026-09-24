@@ -68,7 +68,7 @@ STAGES: tuple[Stage, ...] = (
         task="T2",
         config_stage="catalog",
         group="judgments",
-        outputs=("judgments.jsonl", "summary.json"),
+        outputs=("judgments.jsonl.gz", "summary.json"),
         summary="GT policy v1 による完全判定 GT",
         implemented=True,
     ),

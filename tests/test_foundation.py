@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import copy
+import errno
 import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import yaml
 
 from parts_search.config.loader import load_secret, load_settings
 from parts_search.errors import FoundationError
+from parts_search.records.io import iter_jsonl
 from parts_search.runstore import publish_run, verify_run
 
 REPO = Path(__file__).resolve().parents[1]
@@ -131,6 +134,76 @@ class FoundationTest(unittest.TestCase):
             publish_run(runs, "broken", {"bad.json": {"x": float("nan")}}, {})
         self.assertFalse((runs / "broken").exists())
         self.assertEqual(list(runs.iterdir()), [])
+
+    def test_disk_full_is_reported_as_disk_full(self):
+        """失敗の原因を 1 つの文言へ丸めない。
+
+        ENOSPC を "Cannot publish run" だけで返すと、容量不足なのか入力不正なのかを
+        運用側で切り分けられない（`docs/06_error_policy.md` の分類）。
+        """
+        runs = self.root / "runs"
+        full = OSError(errno.ENOSPC, "No space left on device")
+        with unittest.mock.patch.object(Path, "write_bytes", side_effect=full):
+            with self.assertRaises(FoundationError) as error:
+                publish_run(runs, "full", {"report.json": {"ok": True}}, {})
+        self.assertEqual("ARTIFACT_IO", error.exception.code)
+        self.assertIn("ENOSPC", str(error.exception))
+        self.assertFalse((runs / "full").exists())
+
+    def test_serialization_failure_is_not_reported_as_io(self):
+        """入力不正を I/O 障害と同じコードで返さない。"""
+        with self.assertRaises(FoundationError) as error:
+            publish_run(self.root / "runs", "broken", {"bad.json": {"x": float("nan")}}, {})
+        self.assertEqual("INVALID_INPUT", error.exception.code)
+
+    def test_jsonl_rows_reach_disk_before_the_generator_finishes(self):
+        """全件をメモリへ溜めない。generator を逐次消費して書く。
+
+        list へ materialize すると 2,000 万行の GT で数 GB を抱える。
+        """
+        runs = self.root / "runs"
+        sizes = []
+        padding = "x" * 200_000
+
+        def rows():
+            for index in range(3):
+                yield {"id": index, "pad": padding}
+                stage = next(iter(runs.glob(".stream-*")), None)
+                sizes.append((stage / "events.jsonl").stat().st_size if stage else 0)
+
+        publish_run(runs, "stream", {"events.jsonl": rows()}, {})
+        self.assertTrue(all(size > 0 for size in sizes), sizes)
+
+    def test_json_outputs_are_written_after_jsonl_generators(self):
+        """generator が埋める集計を、確定前に直列化しない（宣言順に依存させない）。"""
+        stats = {"rows": 0}
+
+        def rows():
+            for index in range(3):
+                stats["rows"] += 1
+                yield {"id": index}
+
+        path = publish_run(
+            self.root / "runs", "order", {"summary.json": stats, "events.jsonl": rows()}, {}
+        )
+        self.assertEqual(3, json.loads((path / "summary.json").read_text())["rows"])
+
+    def test_gzip_jsonl_is_stored_compressed_and_reproducible(self):
+        """完全判定 GT を全行残したまま容量を落とす。
+
+        gzip header に時刻を入れない — 同じ内容なら同じ checksum になる。
+        """
+        runs = self.root / "runs"
+        rows = [{"id": f"row-{index:06d}", "relevance": 0} for index in range(5000)]
+        path = publish_run(runs, "gz", {"events.jsonl.gz": list(rows)}, {})
+        stored = path / "events.jsonl.gz"
+        self.assertLess(stored.stat().st_size, len(json.dumps(rows)) // 5)
+        self.assertEqual(rows, list(iter_jsonl(stored)))
+        again = publish_run(runs, "gz-again", {"events.jsonl.gz": list(rows)}, {})
+        self.assertEqual(
+            verify_run(path)["outputs"]["events.jsonl.gz"],
+            verify_run(again)["outputs"]["events.jsonl.gz"],
+        )
 
     def test_rejects_paths_and_manifest_override(self):
         for name in ["../escape", "nested/name", ".hidden"]:

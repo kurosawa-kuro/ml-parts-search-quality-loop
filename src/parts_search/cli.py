@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from parts_search.config.loader import STAGES, load_settings
-from parts_search.errors import FoundationError
+from parts_search.errors import FoundationError, io_error
 from parts_search.logs import configure
 from parts_search.pipelines.bootstrap import run_bootstrap
 from parts_search.pipelines.release import activate as activate_release
@@ -165,10 +165,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return EXIT_OK
     except FoundationError as error:
-        print(json.dumps({"error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        # error_code は docs/06_error_policy.md の分類。原因の切り分けに使う。
+        payload = {"error": str(error), "error_code": error.code}
+        print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
         return EXIT_ERROR
-    except OSError:
-        print(json.dumps({"error": "Filesystem operation failed"}), file=sys.stderr)
+    except OSError as error:
+        failure = io_error("Filesystem operation failed", error)
+        payload = {"error": str(failure), "error_code": failure.code}
+        print(json.dumps(payload, ensure_ascii=False), file=sys.stderr)
         return EXIT_ERROR
 
 

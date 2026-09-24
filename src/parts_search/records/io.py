@@ -8,13 +8,14 @@ version 検査が抜けた経路が必ず 1 本できる。
 
 from __future__ import annotations
 
+import gzip
 import json
 from collections.abc import Iterator
 from itertools import islice
 from pathlib import Path
 from typing import Any
 
-from parts_search.errors import FoundationError
+from parts_search.errors import FoundationError, io_error
 from parts_search.records.contracts import SCHEMA_VERSION
 from parts_search.records.validate import validate
 from parts_search.runstore import verify_run
@@ -48,11 +49,15 @@ def iter_jsonl(path: Path, *, max_bytes: int | None = MAX_BYTES) -> Iterator[dic
     **空ファイルは 0 件として正常に返す**（0 件は結果であり、失敗ではない）。
     行に `schema_version` があれば検査する。無い行は許す — レコード契約は
     行ごとに version を要求せず、同梱 manifest 側で持つ形もあるため。
+
+    `.jsonl.gz` は透過的に展開する。圧縮は保存形の差であって契約の差ではない。
+    `max_bytes` は**ディスク上のサイズ**に対する上限（展開後ではない）。
     """
     try:
         if max_bytes is not None and path.stat().st_size > max_bytes:
             raise FoundationError("JSONL document exceeds size limit")
-        with path.open(encoding="utf-8") as handle:
+        opener = gzip.open if path.name.endswith(".gz") else open
+        with opener(path, "rt", encoding="utf-8") as handle:
             for number, line in enumerate(handle, start=1):
                 line = line.strip()
                 if not line:
@@ -67,7 +72,7 @@ def iter_jsonl(path: Path, *, max_bytes: int | None = MAX_BYTES) -> Iterator[dic
                     _check_version(row["schema_version"], f"line {number}")
                 yield row
     except OSError as error:
-        raise FoundationError("Cannot read a valid JSONL document") from error
+        raise io_error("Cannot read a valid JSONL document", error) from error
 
 
 def read_records(name: str, path: Path) -> list[dict]:
@@ -100,7 +105,7 @@ def iter_judgments(artifact: Path, *, batch_size: int = 10000) -> Iterator[dict]
     if metadata.get("stage") != "judgments" or metadata.get("implemented") is not True:
         raise FoundationError("Expected an implemented judgments artifact")
     summary = read_json(artifact / "summary.json")
-    rows = iter_jsonl(artifact / "judgments.jsonl", max_bytes=None)
+    rows = iter_jsonl(artifact / "judgments.jsonl.gz", max_bytes=None)
     previous = None
     count = 0
     while batch := list(islice(rows, batch_size)):

@@ -153,7 +153,7 @@ def build_judgments(config: dict, dataset: Path) -> tuple[dict, dict]:
         "no_relevant_queries": 0,
     }
     output = {
-        "judgments.jsonl": judgment_rows(products, queries, gt_id, stats),
+        "judgments.jsonl.gz": judgment_rows(products, queries, gt_id, stats),
         "summary.json": stats,
     }
     provenance = {

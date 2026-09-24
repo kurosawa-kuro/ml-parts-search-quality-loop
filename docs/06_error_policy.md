@@ -26,6 +26,13 @@ readのみの検索は固定indexに対して再試行する。eventはevent_id�
 
 バッチ終了コードは 0=完了、1=実行失敗、2=設定未確定、3=骨組みのみ、**4=実行成功だが品質不採用**。採否は decision に明示し、`rejected` / `inconclusive` はいずれも 4 として実行失敗（1）と区別する。品質の採否は `decision.json` を読んで判定する（終了コードだけで採否理由を表さない）。
 
+## エラーの公開形
+
+`FoundationError`は上表の分類を`code`として持ち、CLIは`{"error": ..., "error_code": ...}`を
+stderrへ出す。**別種の失敗を同じ文言へ丸めない** — 容量不足（ENOSPC）と入力不正が
+同じ文字列で返ると運用側で切り分けができない。I/O失敗は`ARTIFACT_IO`とし、errno名と
+`os.strerror`だけをメッセージへ載せる（パス・設定値・秘密情報は載せない）。
+
 ## ログと診断
 
 構造化ログにtimestamp、level、experiment_id、run_id、query_id、stage、attempt、error_code、duration、artifact参照を持たせる。成功件数・0件・失敗・未実行・判定不能・隔離eventの件数をsummaryに残す。秘密情報は記録しない。GT・生eventをログに重複出力せず成果物IDから追跡する。

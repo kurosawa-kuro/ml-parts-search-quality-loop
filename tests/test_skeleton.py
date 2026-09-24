@@ -72,7 +72,7 @@ class SkeletonTest(unittest.TestCase):
         for stage in STAGES:
             self.assertTrue(stage.outputs, f"{stage.name} は成果物を宣言する")
             for name in stage.outputs:
-                self.assertTrue(name.endswith((".json", ".jsonl")), name)
+                self.assertTrue(name.endswith((".json", ".jsonl", ".jsonl.gz")), name)
 
     def test_placeholder_reflects_declared_implementation(self):
         """placeholder が実装状態を偽らないこと。
