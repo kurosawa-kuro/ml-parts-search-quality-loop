@@ -23,6 +23,8 @@ artifacts/
 
 `artifacts/`はGit管理外。各manifestにID、schema_version、作成日時、code revision、dirty差分のdigest、依存lockのdigest、設定、seed、入力ID・checksum、出力path・checksum、実行状態を持たせる。未コミット実行の再現には差分patchも保存する。秘密情報はsnapshotへ含めない。indexはcatalog・embedding revision・前処理設定のchecksumから識別し、再構築できる派生成果物とする。
 
+保持本数は `artifacts.retention`。`keep` が group 共通の既定で、`groups` が group ごとの上書き。`parts-search prune` は各 group の新しい run をその本数残し、より古い完了 run を削除する。`publish_run` は削除しない。`active.json` の release と、rollback が戻る直前の 1 本、およびそれらの manifest が `path` または `artifact` と `manifest_checksum` で参照する入力 run は本数に関わらず残す。`previous` をさらに辿った履歴は残さない。lock・staging（`.` 始まり）と manifest を読めないディレクトリは削除しない。
+
 一時ディレクトリへ出力し、検証後に同一filesystem内でrenameして成功manifestを公開する。学習のlabel_gainもMetricPolicy v1の配列 `[0, 0, 1, 3, 7]` と一致させる。異なる目的関数の実験は別policyとして扱う。入力snapshotは不変。変更・再評価・再試行には新IDを払い出す。`retry_of` / `parent_experiment_id`で関係を残す。
 
 ## 最小レコード契約

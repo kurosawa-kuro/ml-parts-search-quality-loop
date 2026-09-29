@@ -28,6 +28,7 @@
 make pipeline                                   # 9段階を依存順に実行
 make activate RELEASE=artifacts/releases/<id>   # promoteしたreleaseをactiveへ
 make rollback                                   # 直前のactiveへ戻す
+make prune                                      # 保持本数を超えた古いrunを削除する
 ```
 
 ## セットアップと起動
@@ -58,7 +59,8 @@ make fmt lint test build
 - `stages`: 全9段階と実装状況を一覧する。
 - `stage catalog`: Catalog/Query/splitを生成する。
 - `stage judgments --dataset <artifact>`: 明示したdatasetの完全判定GTを生成する。
-- `pipeline`: 依存順に実行する。未実装工程が残るためGolden Path全体は未完了。
+- `pipeline`: 依存順に9段階を実行する。`golden_path_complete` のときだけ終了 0。
+- `prune`: `artifacts.retention` を超えた古い run を削除する。active release と rollback 先、その入力は残す。
 
 既定GTは2,000万行。実行手順と大規模読込APIは[ワークフロー](docs/04_workflows.md)を参照。
 

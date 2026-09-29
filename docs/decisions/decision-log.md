@@ -124,3 +124,18 @@ _まだ判断は記録されていません。`log-decision` が末尾に追記�
   `mtime=0` で内容が同じなら同一 checksum。`records.io.iter_jsonl` は `.gz` を透過展開する。
 - 調整条件: gzip でも足りない規模（例: catalog 10万 SKU で GT 20億行）になったら、
   sparse ではなく Parquet + 列圧縮へ進む。sparse 案は以降検討しない。
+
+## 2026-09-29T10:30Z — 成果物の保持本数を group ごとに置き、prune は active と rollback 先だけを固定する
+- type: default-taken
+- 根拠 (why): タスクは「共通の既定か group ごと」のどちらでもよかった。1 回の pipeline は
+  `runs` に 7 本、`models` に 3 本書くので、共通の 2 本だけだと同じ周の途中成果物が
+  activate 前に消える。既定 `keep=2`、`runs=8`（7 + foundation bootstrap）、`models=4`
+  （seed 3 + 1）にした。参照の辿りは scope にある「入力 run は残す」そのものなので、
+  manifest の `path` / `artifact` + `manifest_checksum` を active から辿る。
+- 影響範囲 (blast radius): `publish_run` は消さない。`prune` を実行したときだけ、
+  保持本数の外かつ pin されていない完了 run が消える。rollback が戻せるのは直前の 1 本で、
+  `previous.previous` 以降の履歴は pin しない（履歴全部を残すと刈れない）。
+- 撤退条件 (stop/revert): 1 周分が `runs=8` に収まらなくなったら group の本数を上げる。
+  activate 前に prune すると、その周の未 pin 成果物は保持本数の分しか残らない。
+- 結果 (outcome): win
+- link: docs/tasks/05_done/2026-09-24-run成果物の保持本数を決めて刈る.md

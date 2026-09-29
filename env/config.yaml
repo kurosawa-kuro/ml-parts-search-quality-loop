@@ -20,6 +20,15 @@ artifacts:
   checksum: sha256
   immutableSnapshots: true
   atomicPublish: true
+  # prune が group ごとに残す完了 run の本数。active release とその入力、
+  # rollback 先の 1 本は本数に含めず残す。publish は自動では消さない。
+  # runs は 1 pipeline で 7 本（検索・評価 4・simulation 2）、models は seed 3 本。
+  # その 1 周と foundation bootstrap 1 本が収まる数を上書きする。
+  retention:
+    keep: 2
+    groups:
+      runs: 8
+      models: 4
 
 catalog:
   domain: fa_parts

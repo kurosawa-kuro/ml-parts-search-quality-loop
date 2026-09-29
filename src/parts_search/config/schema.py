@@ -28,6 +28,16 @@ def array(item):
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 POSITIVE = {"type": "integer", "minimum": 1}
 SEED = {"type": "integer", "minimum": 0}
+# publish_run が書く group。prune が削除してよいディレクトリはこれだけ。
+ARTIFACT_GROUPS = (
+    "reports",
+    "datasets",
+    "judgments",
+    "runs",
+    "models",
+    "experiments",
+    "releases",
+)
 RATIO = {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
 NONNEGATIVE = {"type": "number", "minimum": 0}
 OPTIONAL_TEXT = nullable(TEXT)
@@ -53,6 +63,22 @@ CONFIG_SCHEMA = obj(
         checksum=const("sha256"),
         immutableSnapshots=const(True),
         atomicPublish=const(True),
+        # keep は group 共通の保持本数。groups は group ごとの上書き（空でもよい）。
+        # 1 回の pipeline が runs に 7 本、models に 3 本書くため、そこだけ既定より多い。
+        retention={
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["keep", "groups"],
+            "properties": {
+                "keep": POSITIVE,
+                "groups": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {name: POSITIVE for name in ARTIFACT_GROUPS},
+                    "required": [],
+                },
+            },
+        },
     ),
     catalog=obj(
         domain={"enum": ["fa_parts", "automotive_parts"]},

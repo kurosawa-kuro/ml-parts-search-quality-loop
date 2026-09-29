@@ -11,6 +11,7 @@ from parts_search.config.loader import STAGES, load_settings
 from parts_search.errors import FoundationError, io_error
 from parts_search.logs import configure
 from parts_search.pipelines.bootstrap import run_bootstrap
+from parts_search.pipelines.prune import prune_artifacts
 from parts_search.pipelines.release import activate as activate_release
 from parts_search.pipelines.release import rollback as rollback_release
 from parts_search.pipelines.skeleton import run_pipeline, run_stage
@@ -55,6 +56,10 @@ def build_parser() -> argparse.ArgumentParser:
     activate = commands.add_parser("activate", help="Point active.json at a promoted release")
     activate.add_argument("release", type=Path)
     commands.add_parser("rollback", help="Restore the previous active release reference")
+    commands.add_parser(
+        "prune",
+        help="Delete artifact runs older than the configured retention; keep the active release",
+    )
     pipeline = commands.add_parser("pipeline", help="Run every stage in dependency order")
     pipeline.add_argument("--dataset", type=Path)
     pipeline.add_argument("--judgments", type=Path)
@@ -151,6 +156,14 @@ def main(argv: list[str] | None = None) -> int:
                     # 実行は成功している。品質で採用にならなかったことを別コードで返す。
                     return EXIT_NOT_ACCEPTED
                 return EXIT_OK if completed else EXIT_SKELETON
+            if args.command == "prune":
+                active = settings.root / settings.config["paths"]["activeRelease"]
+                retention = settings.config["artifacts"]["retention"]
+                output = prune_artifacts(
+                    settings.artifacts_root, active, retention["keep"], retention["groups"]
+                )
+                print(json.dumps(output, ensure_ascii=False, indent=2))
+                return EXIT_OK
             if args.command in ("activate", "rollback"):
                 active = settings.root / settings.config["paths"]["activeRelease"]
                 output = (

@@ -23,7 +23,7 @@
 4. 一時active.jsonへ新release_id・checksumを書き、同一filesystem上のrenameで切り替える。
 5. 切替後smokeを実施し、runが新release_idを使っていることと最終成果物を確認する。
 
-同時実行のsimulationは開始時にbundleを固定し、途中でactiveが変わっても混在させない。更新・rollbackの履歴を残し、旧bundleは削除しない。
+同時実行のsimulationは開始時にbundleを固定し、途中でactiveが変わっても混在させない。更新・rollbackの履歴を残し、activate / rollback は旧bundleを削除しない。古い run を消すのは `parts-search prune` だけで、active と rollback 先の 1 本、およびそれらが参照する入力は残す。
 
 ## Golden Pathのsmoke
 

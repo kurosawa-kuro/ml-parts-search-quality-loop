@@ -12,6 +12,7 @@ make config-check
 make run
 make stages
 make pipeline
+make prune
 make fmt lint test build
 ```
 
@@ -25,6 +26,7 @@ make fmt lint test build
 uv run --locked parts-search stages
 uv run --locked parts-search pipeline [--stop-on-block]
 uv run --locked parts-search stage retrieval
+uv run --locked parts-search prune
 ```
 
 各段階は依存する設定段階のblockerを検査し、未確定なら**成果物を書かずに`blocked`**として報告する。未確定の設定で`status: succeeded`のmanifestを作らないため。
@@ -105,7 +107,7 @@ uv run --locked parts-search verify-artifact artifacts/judgments/<run_id>
 
 両stageは正常完了時exit 0。dataset未指定のjudgmentsは成果物を作らずblocked / exit 2。
 入力の改変・未対応版・未知policyはexit 1。GTの判定完了状況はsummary.jsonで確認する。
-再実行は新しい公開IDへ保存し、以前の成果物は保持する。Pythonで大きなGTを読む場合は
+再実行は新しい公開IDへ保存し、以前の成果物は自動では消さない。保持本数を超えた分は `parts-search prune` で削除する。Pythonで大きなGTを読む場合は
 `parts_search.records.io.iter_judgments(Path(...))`を最後まで消費する。
 
 ## 検索・評価・学習・比較の実行（T3〜T6）

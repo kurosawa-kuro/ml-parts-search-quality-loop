@@ -98,6 +98,7 @@
 
 - [決定済み設定と後続の具体化・検証](02_backlog/20260921-search-quality-poc-decisions.md)
 - [Golden Pathの段階的実装](03_active/20260921-search-quality-poc-implementation.md)
+- [成果物 run の保持本数を決めて刈る](05_done/2026-09-24-run成果物の保持本数を決めて刈る.md)
 - [T1 データ契約validatorと手書きfixture](05_done/2026-09-22-データ契約validatorと手書きfixture.md)
 - [T2 合成カタログ・Query・GTとfamily分割](05_done/2026-09-22-合成カタログQueryGTとfamily分割.md)
 - [T3 Vector Baseline検索とSearchRun](05_done/2026-09-22-VectorBaseline検索とSearchRun.md)
