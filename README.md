@@ -1,6 +1,7 @@
 # Parts Search Quality Loop
 
 多言語の部品検索で、失敗検知・GT更新・再学習・独立評価をつなぐPoC。
+学習としての目的は、DS から「オフラインはそこそこあるが、オンラインで下がる」と渡されたとき、指標定義、評価母集団、正解、分布、特徴量の一致、候補生成と順位付けの分離、の順で切り分け、モデルの調整は最後に置く経験を、実プログラムで積むことである。この PoC の本番運用も、シミュレーションを実サービスの実証とすることも、その目的に数えない。
 **T1〜T8を実装済み（2026-09-22）。Golden Path 9段階が実処理で通る。** 固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較、疑似オンラインsimulation（版付きpolicy・paired stream・KPI）、独立holdout評価とonline guardrail、ReleaseBundleの原子的切替とrollbackがつながる。
 
 ## 初めて開いたときの読み順
@@ -22,7 +23,7 @@ flowchart TD
 | 順 | 文書 | ここで分かること |
 |---|---|---|
 | 1 | この README | 何の PoC か。終了コード。`make pipeline` |
-| 2 | [learning](docs/learning/README.md) と [目的](docs/learning/01_purpose.md) | 評価を一つにしても完了ではない。VectorSearch、LightGBM、Feature Store のどれに対応するか |
+| 2 | [learning](docs/learning/README.md) と [目的](docs/learning/01_purpose.md) | オフラインは良いのにオンラインで落ちるとき、モデルの前に開く順 |
 | 3 | [02 アーキテクチャ](docs/02_architecture.md) | 検索・学習・評価が、どの成果物でジョブ分割されているか |
 | 4 | [03 ドメイン](docs/03_domain_model.md) | CandidateSet、FeatureSchema、ReleaseBundle の境界 |
 | 5 | [05 データ](docs/05_data_model.md) | `artifacts/` のディレクトリと、固定する checksum |

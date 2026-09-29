@@ -18,6 +18,8 @@
 
 ファイル名の `01` から順に読まない。`01_requirements.md` は範囲の契約で、最初の一枚はリポジトリ直下の README である。同じ表が README の先頭にもある。
 
+学習としての成功は [learning/01_purpose.md](./learning/01_purpose.md) の「成功」に書いてある。この PoC を本番の検索として運用することは、その成功に数えない。
+
 ```mermaid
 flowchart TD
   R["1 README"] --> L["2 learning の目的"]
@@ -33,7 +35,7 @@ flowchart TD
 | 順 | 文書 | ここで分かること |
 |---|---|---|
 | 1 | [README](../README.md) | 何の PoC か。終了コード。`make pipeline` |
-| 2 | [learning/README.md](./learning/README.md) と [目的](./learning/01_purpose.md) | 評価を一つにしても完了ではない。VectorSearch、LightGBM、Feature Store のどれに対応するか |
+| 2 | [learning/README.md](./learning/README.md) と [目的](./learning/01_purpose.md) | オフラインは良いのにオンラインで落ちるとき、モデルの前に開く順 |
 | 3 | [02_architecture.md](./02_architecture.md) | 検索・学習・評価が、どの成果物でジョブ分割されているか |
 | 4 | [03_domain_model.md](./03_domain_model.md) | CandidateSet、FeatureSchema、ReleaseBundle の境界 |
 | 5 | [05_data_model.md](./05_data_model.md) | `artifacts/` のディレクトリと、固定する checksum |
