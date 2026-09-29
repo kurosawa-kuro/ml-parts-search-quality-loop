@@ -18,6 +18,7 @@
 |---|---|
 | [tasks/README.md](./tasks/README.md) | 今日やること、次にやること、完了したことを管理する |
 | [tasks/03_active/refactoring-candidates.md](./tasks/03_active/refactoring-candidates.md) | 常時見る cleanup / refactoring 候補 |
+| [learning/README.md](./learning/README.md) | オンライン精度をこの土台で学ぶ読み順。契約ではない |
 | [04_workflows.md](./04_workflows.md) | 作業開始、検証、リリース前確認のコマンド |
 | [07_test_strategy.md](./07_test_strategy.md) | タスク完了前に通す品質ゲート |
 
@@ -35,6 +36,7 @@
 | [06_error_policy.md](./06_error_policy.md) | エラー処理・リトライ・ログ |
 | [07_test_strategy.md](./07_test_strategy.md) | テスト方針と品質ゲート |
 | [08_release_runbook.md](./08_release_runbook.md) | リリース・マイグレーション・復旧 |
+| [learning/README.md](./learning/README.md) | MLOps 向けの学習ガイド。オフラインとオンラインが食い違ったときの読み順。挙動の正本ではない |
 | [tasks/README.md](./tasks/README.md) | 日次運用の実行ハブ、作業計画、実装タスク |
 
 ## PoC設計の素材

@@ -1,6 +1,7 @@
 # Parts Search Quality Loop
 
 多言語の部品検索で、失敗検知・GT更新・再学習・独立評価をつなぐPoC。
+オンライン精度の手順をこの土台で学ぶ読み順は [docs/learning](docs/learning/README.md)。01〜08 の契約とは別である。
 **T1〜T8を実装済み（2026-09-22）。Golden Path 9段階が実処理で通る。** 固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較、疑似オンラインsimulation（版付きpolicy・paired stream・KPI）、独立holdout評価とonline guardrail、ReleaseBundleの原子的切替とrollbackがつながる。
 
 ## 現在地と実装順序
