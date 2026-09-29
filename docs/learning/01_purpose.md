@@ -31,20 +31,20 @@
 
 ## ループ
 
-```text
-オンライン側の観測（production 分割の疑似提示）
-    ↓
-失敗クエリを、取りこぼし / 順位 / 1位 に分ける
-    ↓
-正解の更新が必要なら、評価に使った集合とは別の版で行う
-    ↓
-原因の段だけを変える（候補生成か、特徴とリランキングか）
-    ↓
-Holdout のオフライン
-    ↓
-production のオンライン KPI
-    ↓
-四つの関門を同時に満たしたときだけ採用する。外れたら戻す
+```mermaid
+flowchart TD
+  Obs["production の疑似提示"] --> Split{"失敗の場所"}
+  Split -->|候補に無い| VS["VectorSearch を回す"]
+  Split -->|候補にはある| LGB["LightGBM と列を回す"]
+  Split -->|正解が壊れている| GT["正解の版を分ける"]
+  VS --> Hold["holdout の NDCG"]
+  LGB --> Hold
+  GT --> Hold
+  Hold --> Prod["production の 1 位 KPI"]
+  Prod --> Gate{"四関門"}
+  Gate -->|全部通過| Act["activate"]
+  Gate -->|外れ| Back["rollback し、失敗 ID を残す"]
+  Back --> Obs
 ```
 
 疑似オンラインは実トラフィックではない。ここで確認できるのは、凍結した行動規則のうえで KPI が動いたかまでである。参画先の A/B の代わりにはしない。A/B の前に、オフライン改善を無条件で流さないための関門として読む。

@@ -15,6 +15,21 @@
 | 再検索率 | 0.227 → 0.171 | 関門には使っていない。同じ方向の参考 |
 | 失敗件数 | retrieval_miss 488、rerank_miss 336、simulation_miss 4 | 取りこぼしは残った。1 位の失敗はほぼ消えた |
 
+```mermaid
+flowchart LR
+  subgraph flat ["差が 0"]
+    Rec["Recall@100"]
+  end
+  subgraph up ["同じ方向に動いた"]
+    N["NDCG@10 +0.2429"]
+    S["成功率 0.757 から 0.971"]
+    W["誤適合 0.243 から 0.029"]
+  end
+  Rec --- N
+```
+
+Recall が止まっているので、動いた信用は LightGBM 側に限る。488 件の取りこぼしは、この promote の外に残っている。
+
 10,000 SKU、正解 2,000 万行の別実行も同じ方向である。holdout の NDCG@10 は +0.2589、検索成功率の差は +0.21、誤適合率の差は -0.21。exit 0、`promote`。
 
 これは、コンペでいうと public も private も同じ方向に動いた提出である。教材の失敗（寸法が近い別部品が 1 位）に対して、構造化の列が 1 位を動かした、と読める。Recall が動いていないので、その信用は LightGBM 側に限定できる。
@@ -30,6 +45,15 @@ seed 三つで NDCG は小数 9 桁まで同じで、モデル checksum は seed
 ## まだ無い実験
 
 学ぶ対象は、オフラインとオンラインが割れたあとの 2 周目である。次は残っていない。
+
+```mermaid
+flowchart LR
+  A["1 周目 両方上昇 証跡あり"] --> B["NDCG だけ通り KPI が外れる"]
+  B --> C["失敗 ID だけで一段を回す"]
+  C --> D["holdout と production が同じ方向"]
+  B -.->|未観測| C
+  C -.->|未観測| D
+```
 
 - NDCG は accepted で、検索成功率か誤適合率が関門を外して `promote` にならなかった run
 - その `failures.jsonl` の ID だけを渡し、候補 run を固定したまま列を変えた次実験。または候補生成だけを変えた次実験

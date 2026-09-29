@@ -12,9 +12,31 @@
 
 Gate 段階の `decision` はオフライン比較の途中結果で、正式採用ではない。正式な採否は Release の `decision.json` にある。
 
+```mermaid
+flowchart TD
+  NDCG["オフライン accepted"] --> Rel
+  HO["holdout accepted"] --> Rel["release の decision"]
+  SS["検索成功率の低下が 0.01 以内"] --> Rel
+  WF["誤適合率の上昇が 0.005 以内"] --> Rel
+  Rel -->|四つとも| Act["activate"]
+  Rel -->|一つでも外れ| Stop["promote しない"]
+```
+
 ## 失敗種別が、回し直すジョブを決める
 
 `failures.jsonl` の `category` を、評価 run と simulation run で別々に数える。
+
+```mermaid
+flowchart TD
+  F["failures.jsonl"] --> RM["retrieval_miss"]
+  F --> RR["rerank_miss"]
+  F --> SM["simulation_miss"]
+  RM --> VS["VectorSearch を回す"]
+  RR --> LGB["候補 run を固定して LightGBM"]
+  SM --> Top{"1 位の relevance"}
+  Top -->|0| LGB
+  Top -->|候補外| VS
+```
 
 | category | 入力表の状態 | 回すジョブ | 固定するもの |
 |---|---|---|---|
@@ -29,6 +51,15 @@ Gate 段階の `decision` はオフライン比較の途中結果で、正式採
 ## 教材になっている失敗
 
 ベクトルだけだと、要求が M6 30mm SUS のときに 1 位が M8 30mm SUS になる。relevance は 0 である。求める商品は候補の 4 位付近にいる。これは `rerank_miss` であり、オンラインでは `wrongFitmentRate` に出る。
+
+```mermaid
+flowchart LR
+  B1["1 位 M8 rel 0"] --> B2["2 位 長さ違い"]
+  B2 --> B4["4 位 求める M6"]
+  B4 -->|"1 位まで上げる"| A1["1 位 求める M6 rel 4"]
+```
+
+2 位まで上げただけでは 1 位の M8 が残り、NDCG だけが動く。図の矢印は、求める M6 を 1 位まで上げたときである。
 
 足す列は意味類似の作り直しではない。実装の `parts_features_v1` は次である。
 

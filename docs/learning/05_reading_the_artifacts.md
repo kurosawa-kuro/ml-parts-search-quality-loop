@@ -14,6 +14,20 @@ uv run --locked parts-search rollback
 
 run の種類は `manifest.json` の `metadata.stage` で区別する。評価と simulation はどちらも `artifacts/runs/` に入る。
 
+```mermaid
+flowchart TD
+  D["release decision.json"] --> M["評価 metrics.json"]
+  M --> Fail["評価 failures.jsonl"]
+  Fail --> Sl["slices.jsonl"]
+  Sl --> Pq["per_query.jsonl の 1 位"]
+  Pq --> K["simulation kpis.json"]
+  K --> Sf["simulation failures.jsonl"]
+  Sf --> Fs["feature_schema.json"]
+  Fs --> Nx["smoke.json の next_experiment"]
+```
+
+Recall の差が 0 なら、`metrics.json` の次は VectorSearch の再実行ではなく、失敗種別と `feature_schema.json` へ進む。`retrieval_miss` が残件の本体なら、列の checksum の前に候補 run が固定できているかを見る。
+
 | 順 | 場所 | 見るフィールド | 判断 |
 |---|---|---|---|
 | 1 | release `decision.json` | `decision` と `gate_results` | 止まった関門がオフラインか、holdout か、二つの KPI か |

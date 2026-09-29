@@ -18,6 +18,22 @@
 | Feature Store | `feature_schema.json` の列順と checksum。学習時と推論時が一致しないと止める | バッチ推論で足した列が、学習ジョブの列とずれていないかを、点数の前に見る |
 | ジョブの切り直し | stage ごとの不変 run。評価は検索を再実行しない | オンラインだけ悪いとき、VectorSearch のジョブと LightGBM のジョブのどちらを回すかを、失敗種別で決める |
 
+```mermaid
+flowchart LR
+  VS["VectorSearch ジョブ"] --> Cand["候補 100 件"]
+  ES["Elasticsearch"] -.-> Cand
+  Cand --> LGB["LightGBM ジョブ"]
+  LGB --> Rank["順位"]
+  Rank --> Off["NDCG@10 並び全体"]
+  Rank --> On["1 位の KPI"]
+  Off --> Gate{"四関門"}
+  On --> Gate
+  Gate -->|全部通過| Act["activate"]
+  Gate -->|どれか外れ| Next["失敗 ID を次のジョブへ"]
+```
+
+点線は参画先にある経路で、このリポジトリには無い。候補を変えた実験と、候補を固定して LightGBM だけ変えた実験は、別の関門の入力にする。
+
 ## このフォルダの位置
 
 01〜08 は挙動の契約である。コードと設定がそれより上である。
