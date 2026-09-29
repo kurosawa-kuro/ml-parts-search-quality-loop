@@ -12,4 +12,4 @@
 - 検証: 最後にfmt/lint/test/build、実Qdrant+固定E5の小規模一貫実行。
 - 境界: productionのrelease切替や品質合格は未検証のまま宣言しない。
 
-実行結果: T3〜T5完了、T6 offline比較実装。131 tests・lint・build成功。実pipeline接続21.16秒。T6系譜/品質終了コードとT7/T8が残る。大規模ML検証は未実施。
+当時の途中結果は T3〜T5完了、T6 の offline 比較まで。その後 T6〜T8 は完了し、規定規模の通し実行は exit 0 / promote。成果物の保持は `prune`（2026-09-29）。

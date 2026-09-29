@@ -1,6 +1,6 @@
-"""Golden Path の段階定義（骨組みのみ。ML は未実装）。
+"""Golden Path の段階定義。9段階はすべて実処理（`implemented=True`）。
 
-各段階は「どの設定段階に依存し、どこへ何を書くか」だけを宣言する。
+各段階は、依存する設定と書き出す成果物を宣言する。
 成果物の配置は `docs/05_data_model.md` の artifacts レイアウトに対応させる。
 
 **未実装を成功として記録しない。** 段階が未実装なら成果物の payload に
@@ -43,7 +43,7 @@ class Stage:
         }
 
 
-# 依存順。docs/tasks/02_backlog/20260921-search-quality-poc-implementation.md の T1〜T8。
+# 依存順。docs/tasks/05_done/20260921-search-quality-poc-implementation.md の T1〜T8。
 STAGES: tuple[Stage, ...] = (
     Stage(
         name="contracts",

@@ -45,7 +45,7 @@ make build        # wheel / sdist build
 - 段階状態（2026-09-22、CLI pipelineで実測）: 9段階すべて`completed`。1,500 SKU / 700 family / 1,400 Queryの通し実行で **exit 0・decision=promote・smoke 6段階pass・activate→rollback**まで確認。小規模データではslice件数不足で`quality=inconclusive`（exit 4）。**採用されていないことを実行失敗と読み替えない。**
 - 品質閾値は凍結値。**acceptedを得るために閾値を下げない**（下げるのはNon-scope）。
 - 依存の制約: **`numpy<2` / Python`<3.13`**（x86_64 mac -> torch 2.2.2 -> numpy<2 -> Python<3.13 の連鎖）。LightGBMは`brew install libomp`が必要。
-- 実装順: [マスタータスク](docs/tasks/03_active/20260921-search-quality-poc-implementation.md)のT1〜T8。
+- 実装順: [マスタータスク](docs/tasks/05_done/20260921-search-quality-poc-implementation.md)のT1〜T8。
 - 設定済み項目と後続の具体化・検証: [判断・設定台帳](docs/tasks/02_backlog/20260921-search-quality-poc-decisions.md)。未決値で正式評価を成功させない。
 
 ## アーキテクチャ

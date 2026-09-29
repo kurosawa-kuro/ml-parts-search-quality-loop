@@ -8,8 +8,8 @@ Codex は作業前にこのファイルを読むため、ここには repo 共�
 
 - 目的: 多言語部品検索の継続改善ループを再現するPoC
 - 主要技術: Python 3.11+ / uv / PyYAML / jsonschema。Qdrant / E5 / LightGBM / ir_measures。
-- 現在地: T1〜T5完了。contracts/catalog/judgments/retrieval/evaluation/training/gateの7段階に実処理あり。T6はoffline比較まで実装、再試行系譜と品質終了コードが残る。T7 simulation・T8 releaseは未実装。
-- 実装順: `docs/tasks/03_active/20260921-search-quality-poc-implementation.md`。次はT6の残件、T7、T8。
+- 現在地: T1〜T8と成果物の保持（`prune`）まで実装済み。Golden Path 9段階は実処理。証跡は `docs/tasks/05_done/`。
+- 実装順: `docs/tasks/05_done/20260921-search-quality-poc-implementation.md`。
 - 実行上の注意: Intel MacでPyTorchとLightGBMを同一プロセスへimportするとOpenMPが停止する。E5は`embedding_worker`専用プロセスを維持する。既存2,000万行GTはpipelineの`--dataset` / `--judgments`で再利用可能。
 
 ## セットアップ / 主要コマンド

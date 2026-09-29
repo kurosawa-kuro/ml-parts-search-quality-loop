@@ -100,7 +100,7 @@ uv run --locked parts-search verify-artifact artifacts/reports/<run_id>   # veri
 | Candidate | [T3](../05_done/2026-09-22-VectorBaseline検索とSearchRun.md) |
 | Evaluation・FailureCase、指標計算と既存期待値の照合 | [T4](../05_done/2026-09-22-評価SliceとFailureCase.md) |
 | FeatureRow・FeatureSchema・ModelBundle | [T5](../05_done/2026-09-22-構造化FeatureとLambdaRank.md) |
-| Experiment・PromotionDecision | [T6](../03_active/2026-09-22-Experiment比較と品質Gate.md) |
+| Experiment・PromotionDecision | [T6](../05_done/2026-09-22-Experiment比較と品質Gate.md) |
 
 FeatureRowとPromotionDecisionは異常例の検査があるが、正常fixtureは未作成。
 各引継ぎ先の受入条件にも明記した。元の全レコード正常fixture条件をこのタスクだけで
