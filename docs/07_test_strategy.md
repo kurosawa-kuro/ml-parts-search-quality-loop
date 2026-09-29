@@ -1,6 +1,6 @@
 # 07 テスト戦略
 
-> foundation・T1契約・T2生成/GT/分割/ストリームのテストを実装済み。検索・学習・品質指標テストは後続工程。
+> **T1〜T8のテストを実装済み（2026-09-22）。** `make test` は単体と CLI。`make test-all` はローカル Qdrant、固定 E5、指標、学習、Release を含む。初めてならコードを変えるときに開く。[読み順](./00_index.md#first-read)。
 
 ## 現在の品質ゲート
 
@@ -20,7 +20,7 @@ pytestを選ぶ理由は様式ではなく契約である。本文書は「選�
 
 `--strict-markers`により綴り違いのmarkerは静かに無視されず失敗する。marker分離が実際に効いていること自体を`tests/test_tooling.py`が検査する（設定を書いただけでは保証にならない）。
 
-検証範囲: YAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行・Golden Path骨組みの段階定義と終了コード・パッケージレイアウトの退行。Ruffで整形とlint、uv buildで配布物を検証する。`make test-all`は実ローカルQdrant・固定E5・指標手計算・3 seed学習・モデル再読込・offline比較を含む。ReleaseBundleと大規模ML通し検証は未実施。
+検証範囲: YAML未知キー/重複・比率・cutoff・gain不整合・パス逸脱・秘密非漏洩・JSON/JSONL保存・原子的公開・上書き拒否・改変検出・CLI実行・Golden Path骨組みの段階定義と終了コード・パッケージレイアウトの退行。Ruffで整形とlint、uv buildで配布物を検証する。`make test-all`は実ローカルQdrant・固定E5・指標手計算・3 seed学習・モデル再読込・offline比較・Release の decision と smoke を含む。1万 SKU / 2,000万行 GT の通しは、このコマンドの対象ではなく [Golden Path の実測](./tasks/05_done/2026-09-22-GoldenPath通し検証とAC証跡.md) である。
 
 ## 実装時のテスト契約
 

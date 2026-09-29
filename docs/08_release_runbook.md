@@ -1,6 +1,6 @@
 # 08 リリース Runbook
 
-> 対象はローカル疑似オンラインで使うReleaseBundleの切替。商用環境への配備は対象外。
+> 対象はローカル疑似オンラインで使うReleaseBundleの切替。商用環境への配備は対象外。初めてなら [読み順](./00_index.md#first-read) の 8 番。
 > **実装済み（2026-09-22）**: `parts-search stage release --gate <実験> --simulation <baseline> --simulation <candidate>`
 > が独立評価・guardrail・decision・smokeを出し、`parts-search activate <release>` / `parts-search rollback`
 > がactive参照を原子的に切り替える。decisionがpromoteでなければactiveへ昇格しない。

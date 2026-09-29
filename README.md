@@ -1,8 +1,39 @@
 # Parts Search Quality Loop
 
 多言語の部品検索で、失敗検知・GT更新・再学習・独立評価をつなぐPoC。
-オンライン精度の手順をこの土台で学ぶ読み順は [docs/learning](docs/learning/README.md)。01〜08 の契約とは別である。
 **T1〜T8を実装済み（2026-09-22）。Golden Path 9段階が実処理で通る。** 固定E5・ローカルQdrantによる検索、完全GT評価、構造化Feature、LightGBM LambdaRank、3 seed比較、疑似オンラインsimulation（版付きpolicy・paired stream・KPI）、独立holdout評価とonline guardrail、ReleaseBundleの原子的切替とrollbackがつながる。
+
+## 初めて開いたときの読み順
+
+ファイル名の番号順には読まない。`docs/01` は要件の契約で、最初の一枚ではない。仕様の地図は [文書索引](docs/00_index.md#first-read) に同じ順で置いてある。
+
+```mermaid
+flowchart TD
+  R["1 この README"] --> L["2 learning の目的"]
+  L --> A["3 ジョブの境界"]
+  A --> D["4 用語"]
+  D --> Data["5 成果物の置き場"]
+  Data --> W["6 コマンド"]
+  W --> E["7 終了コード"]
+  E --> Rel["8 切替と戻し"]
+  Rel --> Study["9 二つの点数から成果物の読み方"]
+```
+
+| 順 | 文書 | ここで分かること |
+|---|---|---|
+| 1 | この README | 何の PoC か。終了コード。`make pipeline` |
+| 2 | [learning](docs/learning/README.md) と [目的](docs/learning/01_purpose.md) | 評価を一つにしても完了ではない。VectorSearch、LightGBM、Feature Store のどれに対応するか |
+| 3 | [02 アーキテクチャ](docs/02_architecture.md) | 検索・学習・評価が、どの成果物でジョブ分割されているか |
+| 4 | [03 ドメイン](docs/03_domain_model.md) | CandidateSet、FeatureSchema、ReleaseBundle の境界 |
+| 5 | [05 データ](docs/05_data_model.md) | `artifacts/` のディレクトリと、固定する checksum |
+| 6 | [04 ワークフロー](docs/04_workflows.md) | 実行、prune、activate |
+| 7 | [06 エラー](docs/06_error_policy.md) | 0 と 4 の違い。品質不採用は実行失敗ではない |
+| 8 | [08 リリース](docs/08_release_runbook.md) | promote した bundle だけ active にする。smoke 失敗で戻す |
+| 9 | [learning の 02 から 05](docs/learning/README.md) | オフラインと 1 位の KPI が食い違ったとき、どのジョブを回すか |
+
+8 までで、パイプラインの切れ目と採用の関門が追える。9 が、このリポジトリで繰り返す中身である。
+
+コードを変えるときは [01 要件](docs/01_requirements.md) と [07 テスト](docs/07_test_strategy.md)。今日の作業計画は [tasks](docs/tasks/README.md)。`docs/specs/` と `archive/` は初見では開かない。
 
 ## 現在地と実装順序
 
@@ -86,4 +117,4 @@ docs/tasks/              T1〜T8、未決事項、完了証跡
 
 `private-ops/tooling/starter-kit/assets/starters/python/ml` のsrc layout、argparse CLI、pipeline、manifestの分離を参考にした。住宅価格回帰やGCS/BigQuery連携は持ち込まず、設定検証と不変run保存を部品検索用に実装した。
 
-設計と残件は [文書索引](docs/00_index.md)、[要件](docs/01_requirements.md)、[アーキテクチャ](docs/02_architecture.md)、[ワークフロー](docs/04_workflows.md)、[タスク一覧](docs/tasks/README.md) を参照。
+設計の入口は [初めて開いたときの読み順](docs/00_index.md#first-read)。

@@ -12,7 +12,48 @@
 > archive
 ```
 
-## 毎日使う入口
+<a id="first-read"></a>
+
+## 初めて開いたとき
+
+ファイル名の `01` から順に読まない。`01_requirements.md` は範囲の契約で、最初の一枚はリポジトリ直下の README である。同じ表が README の先頭にもある。
+
+```mermaid
+flowchart TD
+  R["1 README"] --> L["2 learning の目的"]
+  L --> A["3 ジョブの境界"]
+  A --> D["4 用語"]
+  D --> Data["5 成果物の置き場"]
+  Data --> W["6 コマンド"]
+  W --> E["7 終了コード"]
+  E --> Rel["8 切替と戻し"]
+  Rel --> Study["9 二つの点数から成果物の読み方"]
+```
+
+| 順 | 文書 | ここで分かること |
+|---|---|---|
+| 1 | [README](../README.md) | 何の PoC か。終了コード。`make pipeline` |
+| 2 | [learning/README.md](./learning/README.md) と [目的](./learning/01_purpose.md) | 評価を一つにしても完了ではない。VectorSearch、LightGBM、Feature Store のどれに対応するか |
+| 3 | [02_architecture.md](./02_architecture.md) | 検索・学習・評価が、どの成果物でジョブ分割されているか |
+| 4 | [03_domain_model.md](./03_domain_model.md) | CandidateSet、FeatureSchema、ReleaseBundle の境界 |
+| 5 | [05_data_model.md](./05_data_model.md) | `artifacts/` のディレクトリと、固定する checksum |
+| 6 | [04_workflows.md](./04_workflows.md) | 実行、prune、activate |
+| 7 | [06_error_policy.md](./06_error_policy.md) | 0 と 4 の違い。品質不採用は実行失敗ではない |
+| 8 | [08_release_runbook.md](./08_release_runbook.md) | promote した bundle だけ active にする。smoke 失敗で戻す |
+| 9 | [learning の 02 から 05](./learning/README.md) | オフラインと 1 位の KPI が食い違ったとき、どのジョブを回すか |
+
+8 までで、パイプラインの切れ目と採用の関門が追える。9 が、このリポジトリで繰り返す中身である。
+
+| 開くタイミング | 文書 |
+|---|---|
+| 範囲を変えるとき | [01_requirements.md](./01_requirements.md) |
+| コードを変えるとき | [07_test_strategy.md](./07_test_strategy.md) |
+| 今日の作業 | [tasks/README.md](./tasks/README.md) |
+| 目的が 01〜08 と食い違ったとき | [元設計メモ](./archive/search-quality-loop-brainstorm.md) |
+
+`docs/specs/`、`templates/`、`memory/` はエージェント制御である。初見のプロダクト読み順には入らない。
+
+## 作業に入ったあと
 
 | 入口 | 用途 |
 |---|---|

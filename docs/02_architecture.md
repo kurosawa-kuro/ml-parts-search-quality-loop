@@ -1,6 +1,7 @@
 # 02 アーキテクチャ
 
-> 設計契約v1。ローカル参照実装を確認して改訂。設定・成果物保存・foundation CLI、T1データ契約、T2 Catalog/Query/GT生成は実装済み。検索・学習・評価のパス・インターフェースは予定。観測事実・固定commit・採否理由は [参照実装レビュー](./reference-implementation-review.md)。
+> 設計契約v1。**T1〜T8まで実装済み（2026-09-22）。** 検索・学習・評価・疑似オンライン・Release は、成果物境界で接続するバッチである。観測事実は [参照実装レビュー](./reference-implementation-review.md)。
+> 初めてなら [読み順](./00_index.md#first-read) の 3 番。
 
 ## 概要と実行モデル
 

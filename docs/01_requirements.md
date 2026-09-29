@@ -1,6 +1,6 @@
 # 01 要件
 
-> 最終更新: 2026-09-21。PoCの要求を定義する正本。実装済みを意味しない。構成・実現方法は [02_architecture.md](./02_architecture.md)、検討素材は [元設計メモ](./archive/search-quality-loop-brainstorm.md) を参照。
+> 最終更新: 2026-09-21。PoCの要求を定義する正本。実装済みを意味しない。構成・実現方法は [02_architecture.md](./02_architecture.md)、検討素材は [元設計メモ](./archive/search-quality-loop-brainstorm.md) を参照。初めてなら範囲を変えるときに開く。[読み順](./00_index.md#first-read)。
 
 ## 目的
 

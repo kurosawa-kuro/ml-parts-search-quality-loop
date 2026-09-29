@@ -1,6 +1,6 @@
 # 04 ワークフロー
 
-> **T1〜T8を実装済み（2026-09-22）。9段階すべてに実処理がある。** 1,500 SKU規模の通し実行で `exit 0 / decision: promote / activate→rollback` まで実測済み。
+> **T1〜T8を実装済み（2026-09-22）。9段階すべてに実処理がある。** 1,500 SKU規模の通し実行で `exit 0 / decision: promote / activate→rollback` まで実測済み。初めてなら [読み順](./00_index.md#first-read) の 6 番。
 
 ## 実行できるコマンド
 

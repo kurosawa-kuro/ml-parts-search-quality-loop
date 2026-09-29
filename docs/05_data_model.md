@@ -1,6 +1,6 @@
 # 05 データモデル
 
-> 設計契約v1。**T1〜T8まで実装済み（2026-09-22）**。設定schema、foundation保存・検証、レコードvalidator、合成Catalog/Query/GT、検索・学習・指標・疑似オンラインevent/KPI・ReleaseBundleが実処理で通る。根拠は [参照レビュー](./reference-implementation-review.md)。
+> 設計契約v1。**T1〜T8まで実装済み（2026-09-22）**。設定schema、foundation保存・検証、レコードvalidator、合成Catalog/Query/GT、検索・学習・指標・疑似オンラインevent/KPI・ReleaseBundleが実処理で通る。根拠は [参照レビュー](./reference-implementation-review.md)。初めてなら [読み順](./00_index.md#first-read) の 5 番。
 
 ## 保存方式と識別
 
